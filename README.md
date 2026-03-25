@@ -1,40 +1,43 @@
 # Meteostanice Padařovice
 
-PHP aplikace pro zobrazení dat meteostanice (Ecowitt, vlastní databáze).
+Webová aplikace pro **přehledné zobrazení měření** z meteostanice v Padařovicích: aktuální hodnoty, grafy, dlouhodobý vývoj, statistiky, rekordy a historie. Data vycházejí z **Ecowitt API** a z **vlastní databáze** (historické záznamy).
 
-## Lokální běh
+**Živá verze:** [tomaskrupicka.cz/meteostanice-padarovice](https://tomaskrupicka.cz/meteostanice-padarovice)
 
-1. Zkopíruj `config.example.php` na `config.php`.
-2. Doplň přihlašovací údaje k databázi, Ecowitt a případně ipgeolocation.
-3. Nastav `$appBasePath`: prázdné pro kořen webu, nebo např. `/meteostanice-padarovice` pro nasazení v podadresáři.
-4. Spusť na PHP s rozšířením `mysqli` (např. vestavěný server: `php -S localhost:8080` v kořeni projektu).
+## Co aplikace umí
 
-## GitHub
+- záložky: aktuální stav, dlouhodobý vývoj, statistiky, rekordy, historie  
+- **Highcharts** pro grafy, **jQuery UI** pro ovládání (např. výběr data)  
+- více jazyků a přepínání jednotek (teplota, délka, tlak apod.)  
+- pravidelné obnovení stránky a ajaxový refresh aktuálních hodnot (nastavitelné v konfiguraci)  
+- skript `scripts/dbinsert.php` pro zápis měření do databáze (cron na hostingu)
 
-- V repozitáři je pouze `config.example.php`; soubor `config.php` je v `.gitignore` a nesmí se commitovat.
-- Pokud byl `config.php` s reálnými hesly někdy v historii commitnutý, **změň hesla k DB a API klíče** (Git historie je dál čitelná).
+## Technologie
 
-## Automatické nasazení (FTP)
+PHP (mysqli), HTML/CSS, JavaScript (jQuery, Highcharts). Statické assety a PHP šablony bez frameworku.
 
-Workflow [`.github/workflows/deploy-ftp.yml`](.github/workflows/deploy-ftp.yml) po každém pushi na větev `main` nahraje soubory na FTP.
+## Pro vývojáře
 
-### Secrets v GitHubu
+Repozitář obsahuje zdrojáky webu; **citlivé údaje nejsou v Gitu** — lokálně nebo na serveru se používá `config.php` vytvořený ze šablony.
 
-V **Settings → Secrets and variables → Actions** přidej:
+### Požadavky
 
-| Secret           | Význam |
-|------------------|--------|
-| `FTP_SERVER`     | FTP host (u Wedosu např. `wXXXX.wedos.ws` – viz FTP údaje v administraci) |
-| `FTP_USERNAME`   | FTP uživatel |
-| `FTP_PASSWORD`   | FTP heslo |
-| `FTP_SERVER_DIR` | Cílová složka **na serveru** včetně koncového `/` |
+- PHP s rozšířením **mysqli**  
+- MySQL / MariaDB pro historická data (schéma podle vašeho nasazení)  
+- vlastní **Ecowitt** a případně **ipgeolocation.io** klíče v konfiguraci
 
-`FTP_SERVER_DIR` musí odpovídat struktuře u poskytovatele. U Wedosu je často něco jako `www/nazev-domenoveho-adresare/meteostanice-padarovice/` – ověř v **Správce souborů** nebo v nápovědě k FTP, kam patří obsah pro `tomaskrupicka.cz/meteostanice-padarovice`.
+### Lokální spuštění
 
-### První nasazení
+1. Zkopíruj `config.example.php` → `config.php` a doplň údaje k DB a API.  
+2. Nastav `$appBasePath`: prázdný řetězec pro kořen webu, nebo cestu k podadresáři (např. `/meteostanice-padarovice`).  
+3. V kořeni projektu např. `php -S localhost:8080` a otevři prohlížeč.
 
-Na hostingu musí už existovat `config.php` s produkčními hodnotami (FTP workflow ho z repozitáře neposílá). Jednorázově ho nahraj ručně nebo vytvoř na serveru z `config.example.php`.
+Soubor `config.php` je v `.gitignore` — do commitů patří jen `config.example.php`.
 
-### SFTP / jiný hosting
+### Nasazení a CI (pro správce)
 
-Tento workflow používá čisté FTP. Pokud máš jen SFTP, použij např. akci založenou na `lftp`/`rsync` přes SSH, nebo nasazení z panelu hostingu.
+Po pushi na větev `main` může běžet GitHub Action [`.github/workflows/deploy-ftp.yml`](.github/workflows/deploy-ftp.yml), která nahraje soubory na FTP. V repozitáři je potřeba nastavit secrets `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`, `FTP_SERVER_DIR` (cílová složka na hostingu včetně koncového `/`). `config.php` workflow neposílá — na produkci musí zůstat váš vlastní soubor.
+
+---
+
+V zápatí a v kódu je uvedeno autorství **Tomáš Krupička**, **Michal Ševčík**; původní koncept vychází z prostředí [multi.tricker.cz](http://multi.tricker.cz). Tento repozitář slouží k provozu stanice v **Padařovicích**.
