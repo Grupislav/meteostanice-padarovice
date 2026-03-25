@@ -1,0 +1,9 @@
+# Lokální konfigurace s hesly a API klíči
+/config.php
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+.DS_Store

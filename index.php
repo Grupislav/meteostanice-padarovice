@@ -31,6 +31,9 @@ function keep_params(array $extra = []): string {
   foreach ($extra as $k => $v) $params[$k] = $v;
   return '?' . http_build_query(array_filter($params, fn($v)=>$v!==null), '', '&', PHP_QUERY_RFC3986);
 }
+
+$__appBase = isset($appBasePath) ? rtrim((string)$appBasePath, '/') : '';
+$faviconHref = $__appBase === '' ? '/favicon.png' : $__appBase . '/favicon.png';
 ?>
 <!doctype html>
 <html lang="<?= e($l) ?>">
@@ -40,7 +43,7 @@ function keep_params(array $extra = []): string {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="<?= e($lang['popisstranky'] ?? '') ?>">
   <meta name="author" content="Tomáš Krupička, Michal Ševčík">
-  <link rel="icon" href="/favicon.png" type="image/png">
+  <link rel="icon" href="<?= e($faviconHref) ?>" type="image/png">
   <?php if ($obnoveniStranky > 0): ?>
     <meta http-equiv="refresh" content="<?= $obnoveniStranky ?>">
   <?php endif; ?>
