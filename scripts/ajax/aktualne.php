@@ -33,8 +33,23 @@ $ecoUrl = 'https://api.ecowitt.net/api/v3/device/real_time?' . http_build_query(
 $ecoJson = curl_get_file_contents($ecoUrl);
 $data = $ecoJson ? json_decode($ecoJson) : null;
 
-$xmlString = curl_get_file_contents("http://api.meteo-pocasi.cz/api.xml?action=get-meteo-data&client=xml&id=00004c8SfUq5hdYFumackwf6NBJ5JC0iPfTG0QifuZlcCJs75Sj");
-$xml = $xmlString ? @simplexml_load_string($xmlString) : null;
+$meteoPocasiApiId = isset($meteoPocasiApiId) ? trim((string)$meteoPocasiApiId) : '';
+$xmlString = '';
+if ($meteoPocasiApiId !== '') {
+    $xmlUrl = 'http://api.meteo-pocasi.cz/api.xml?action=get-meteo-data&client=xml&id=' . rawurlencode($meteoPocasiApiId);
+    $xmlString = (string)curl_get_file_contents($xmlUrl);
+}
+$xml = $xmlString !== '' ? @simplexml_load_string($xmlString) : null;
+if ($xml === false) {
+    $xml = null;
+}
+
+$wxSensorCode = static function ($xml) use ($toInt) {
+    if ($xml === null || $xml === false || !isset($xml->input->sensor[0])) {
+        return null;
+    }
+    return $toInt($xml->input->sensor[0]->value ?? null);
+};
 
 /* ────────── Je k dispozici živá teplota? ────────── */
 $hasLive = isset($data->data->outdoor->temperature->value)
@@ -139,7 +154,7 @@ if ($hasLive) {
     $aktnarazvetru = $toFloat($data->data->wind->wind_gust->value);
     $aktsmervetru  = $toFloat($data->data->wind->wind_direction->value);
     $aktsrazky     = $toFloat($data->data->rainfall->daily->value);
-    $aktpocasi     = $toInt($xml->input->sensor[0]->value ?? null);
+    $aktpocasi     = $wxSensorCode($xml);
     $aktualizovano = date("d.m.Y G:i", (int)($data->time ?? time()));
 
     $render([
@@ -153,8 +168,7 @@ if ($hasLive) {
 /* ────────── Větev 2: Fallback na DB ────────── */
 $conn = mysqli_connect($dbServer, $dbUzivatel, $dbHeslo, $dbDb);
 if (!$conn) {
-    // klidný výstup místo fatální chyby
-    echo "<div class='aktualne'><div class='aktualneOdskok'>DB je dočasně nedostupná.</div></div>";
+    echo '<div class="aktualne"><div class="aktualneOdskok">' . e($lang['err_ajax_db'] ?? 'DB error') . '</div></div>';
     return;
 }
 
@@ -175,7 +189,7 @@ if ($t) {
     $aktnarazvetru = $toFloat($t['wind_gust']          ?? null);
     $aktsmervetru  = $toFloat($t['wind_direction']     ?? null);
     $aktsrazky     = $toFloat($t['rain_daily']         ?? null);
-    $aktpocasi     = $toInt($xml->input->sensor[0]->value ?? null);
+    $aktpocasi     = $wxSensorCode($xml);
     $aktualizovano = $t['date_time'] ? date("d.m.Y G:i", strtotime($t['date_time'])) : date("d.m.Y G:i");
 
     $render([
@@ -184,5 +198,5 @@ if ($t) {
         'smer'=>$aktsmervetru, 'srazky'=>$aktsrazky, 'pocasi'=>$wxLabel($aktpocasi), 'aktualizovano'=>$aktualizovano,
     ]);
 } else {
-    echo "<div class='aktualne'><div class='aktualneOdskok'>Není k dispozici žádný záznam.</div></div>";
+    echo '<div class="aktualne"><div class="aktualneOdskok">' . e($lang['err_ajax_nodata'] ?? '') . '</div></div>';
 }

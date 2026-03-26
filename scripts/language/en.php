@@ -221,3 +221,8 @@ $lang['aktualne'] = "Current";
 
 // TMEP 4.2
 $lang['kompletnistranky'] = "Full overview";
+
+// AJAX / errors
+$lang['err_ajax_db']     = 'The database is temporarily unavailable.';
+$lang['err_ajax_nodata'] = 'No data is available.';
+$lang['err_tab_load']    = 'Could not load this tab. Try refreshing the page.';

@@ -19,18 +19,15 @@ $dbDb       = 'db_name';
  */
 $appBasePath = '/meteostanice-padarovice';
 
-// Jazyk a jednotky – výchozí
-$l = 'cz'; // cz, sk, en, de, fr...
-$u = 'C';  // C, F, K, R, D, N, Re, Ro
+// Jazyk a jednotky – výchozí (povolené hodnoty: scripts/variableCheck.php)
+$l = 'cz'; // cz | en
+$u = 'C';  // C | F
 
 // Auto-refresh v sekundách (0 = vypnuto)
 $obnoveniStranky = 360;
 
 // Ajax refresh aktuálních hodnot (sekundy; 0 = vypnuto)
 $ajaxRefreshSec = 60;
-
-// Přesměrování na mobilní verzi? (0/1)
-$presmerovavatMobily = 1;
 
 // Omezovací IP (pokud používáš pro zápis měření)
 $ip = '';
@@ -52,3 +49,6 @@ $ipgeo = [
   'lat'    => '50.0000000',
   'long'   => '15.0000000',
 ];
+
+// Volitelné: ID pro api.meteo-pocasi.cz (stav oblohy u „aktuálního počasí“). Prázdné = API se nevolá.
+$meteoPocasiApiId = '';

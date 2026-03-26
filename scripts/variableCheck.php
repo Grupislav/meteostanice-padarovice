@@ -9,7 +9,7 @@ $jazyky = [
     'en' => 'en',
 ];
 
-// Jednotky nechám všechny, klidnì zúži na C/F
+// Jednotky teploty (menu) — rozší?ení jen spolu s jednotkaTeploty() / grafy
 $jednotky = [
     'C' => 'Celsius',
     'F' => 'Fahrenheit'
@@ -22,7 +22,7 @@ if (isset($_GET['ja'], $jazyky[$_GET['ja']])) {
     $_GET['ja'] = $l;
 }
 
-// Naèti jazykový soubor bezpeènì; fallback na 'cz'
+// Na?ti jazykový soubor bezpe?n?; fallback na 'cz'
 $langFile = __DIR__ . "/language/{$l}.php";
 if (!is_file($langFile)) {
     $l = 'cz';

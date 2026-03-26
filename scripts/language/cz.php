@@ -215,3 +215,8 @@ $lang['aktualne'] = "Aktuálně";
 
 // TMEP 4.2
 $lang['kompletnistranky'] = "Kompletní přehled";
+
+// AJAX / chyby
+$lang['err_ajax_db']     = 'Databáze je dočasně nedostupná.';
+$lang['err_ajax_nodata'] = 'Není k dispozici žádný záznam.';
+$lang['err_tab_load']    = 'Obsah záložky se nepodařilo načíst. Zkus obnovit stránku.';

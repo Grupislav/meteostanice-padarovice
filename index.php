@@ -13,11 +13,9 @@ if (!function_exists('e')) {
   function e(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 }
 
-// Jazyk a jednotka: whitelist + fallback
-$allowedLangs = ['cz','sk','en','de','fr'];
-$allowedUnits = ['C','F','K','R','D','N','Re','Ro'];
-$l = in_array($l ?? 'cz', $allowedLangs, true) ? $l : 'cz';
-$u = in_array($u ?? 'C', $allowedUnits, true) ? $u : 'C';
+// Pojistka proti rozbitému configu — whitelist je definovaný v scripts/variableCheck.php ($jazyky, $jednotky)
+$l = in_array($l, array_keys($jazyky), true) ? $l : 'cz';
+$u = in_array($u, array_keys($jednotky), true) ? $u : 'C';
 
 // Refresh: celé číslo ≥ 0
 $obnoveniStranky = isset($obnoveniStranky) && is_numeric($obnoveniStranky) && (int)$obnoveniStranky >= 0 ? (int)$obnoveniStranky : 0;
@@ -34,13 +32,19 @@ function keep_params(array $extra = []): string {
 
 $__appBase = isset($appBasePath) ? rtrim((string)$appBasePath, '/') : '';
 $faviconHref = $__appBase === '' ? '/favicon.png' : $__appBase . '/favicon.png';
+
+$__host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$__req  = $_SERVER['REQUEST_URI'] ?? '';
+$canonicalUrl = 'https://' . $__host . ($__req !== '' ? preg_replace('/\?.*/', '', $__req) : ($__appBase === '' ? '/' : $__appBase . '/'));
+$htmlLang = $l === 'cz' ? 'cs' : ($l === 'en' ? 'en' : 'cs');
 ?>
 <!doctype html>
-<html lang="<?= e($l) ?>">
+<html lang="<?= e($htmlLang) ?>">
 <head>
   <meta charset="utf-8">
   <title><?= e($lang['titulekstranky'] ?? 'Meteostanice') ?></title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="canonical" href="<?= e($canonicalUrl) ?>">
   <meta name="description" content="<?= e($lang['popisstranky'] ?? '') ?>">
   <meta name="author" content="Tomáš Krupička, Michal Ševčík">
   <link rel="icon" href="<?= e($faviconHref) ?>" type="image/png">
@@ -71,6 +75,7 @@ $faviconHref = $__appBase === '' ? '/favicon.png' : $__appBase . '/favicon.png';
 <script>
   // Lazy načítání obsahu do tabů
   var loadingImage = '<p><img src="./images/loading.gif" alt="Načítání…"></p>';
+  var TAB_LOAD_ERR = <?= json_encode($lang['err_tab_load'] ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?>;
 
   function loadTab(tabId) {
     var $el = $('#' + tabId);
@@ -86,7 +91,7 @@ $faviconHref = $__appBase === '' ? '/favicon.png' : $__appBase . '/favicon.png';
         // pokud jsme právě načetli historii, inicializuj datepicker
         if (tabId === 'historie') setTimeout(initHistorieWidgets, 0);
       } else {
-        $el.html('—');
+        $el.html('<p>' + TAB_LOAD_ERR + '</p>');
       }
     });
   }
