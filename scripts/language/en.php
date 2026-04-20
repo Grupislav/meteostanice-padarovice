@@ -118,8 +118,10 @@ $lang['graf3rokyostatni']   = "Other variables over last 3 years (averages)";
 $lang['prumernamesicnigraf']= "Monthly temperatures";
 $lang['minmesic']           = "Lowest temperature this month";
 $lang['maxmesic']           = "Highest temperature this month";
+$lang['uhrnsrazekmesic']    = "Total precipitation this month";
 $lang['minrok']             = "Lowest temperature this year";
 $lang['maxrok']             = "Highest temperature this year";
+$lang['uhrnsrazekrok']      = "Total precipitation this year";
 
 // statistics
 $lang['statistikytab']       = "Statistics";

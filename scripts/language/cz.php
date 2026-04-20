@@ -112,8 +112,10 @@ $lang['graf3rokyostatni'] = "Ostatní veličiny za poslední 3 roky (průměry)"
 $lang['prumernamesicnigraf'] = "Měsíční teploty";
 $lang['minmesic'] = "Nejnižší teplota tento měsíc";
 $lang['maxmesic'] = "Nejvyšší teplota tento měsíc";
+$lang['uhrnsrazekmesic'] = "Úhrn srážek tento měsíc";
 $lang['minrok'] = "Nejnižší teplota tento rok";
 $lang['maxrok'] = "Nejvyšší teplota tento rok";
+$lang['uhrnsrazekrok'] = "Úhrn srážek tento rok";
 
 //statistiky
 $lang['statistikytab'] = "Statistiky";
