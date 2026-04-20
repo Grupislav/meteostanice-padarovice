@@ -21,7 +21,7 @@ $sql = "
     AVG(exposure)              AS exposure,
     AVG(wind_speed)            AS wind_speed
   FROM history_cron_padarovice
-  WHERE date_time >= NOW() - INTERVAL 5 DAY
+  WHERE date_time >= NOW() - INTERVAL 7 DAY
   GROUP BY bucket
   ORDER BY bucket ASC";
 $res = mysqli_query($conn, $sql);

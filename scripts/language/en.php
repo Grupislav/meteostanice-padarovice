@@ -104,7 +104,7 @@ $lang['jednotka']           = "Unit";
 
 // current
 $lang['graf24hodin'] = "Last 24 hours";
-$lang['graf5dni']    = "Last 5 days";
+$lang['graf5dni']    = "Last 7 days";
 
 // long-term
 $lang['dlouhodobyvyvoj']    = "Long-term";

@@ -98,7 +98,7 @@ $lang['jednotka'] = "Jednotka";
 
 //aktuálně
 $lang['graf24hodin'] = "Posledních 24 hodin";
-$lang['graf5dni'] = "Posledních 5 dní";
+$lang['graf5dni'] = "Posledních 7 dní";
 
 //dlouhodobý vývoj
 $lang['dlouhodobyvyvoj'] = "Dlouhodobý vývoj";

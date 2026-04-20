@@ -79,12 +79,12 @@ echo "</div>";
 echo "
 <div class='karty-wrap'>
   <div class='kartapodgrafy ". barvaRameckuTeploty($minWeek) ."'>
-    <div class='popis'>".$lang['mintyden']."</div>
+    <div class='popis'>".rtrim($lang['nejnizsiteplota'], ':')."</div>
     <div class='aktuamens'>". jednotkaTeploty($minWeek, $u, 1) ."</div>
   </div>
 
   <div class='kartapodgrafy ". barvaRameckuTeploty($maxWeek) ."'>
-    <div class='popis'>".$lang['maxtyden']."</div>
+    <div class='popis'>".rtrim($lang['nejvyssiteplota'], ':')."</div>
     <div class='aktuamens'>". jednotkaTeploty($maxWeek, $u, 1) ."</div>
   </div>
 </div>";
