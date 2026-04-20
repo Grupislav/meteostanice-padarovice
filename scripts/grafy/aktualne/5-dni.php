@@ -7,10 +7,10 @@ $conn = mysqli_connect($dbServer,$dbUzivatel,$dbHeslo,$dbDb);
 if (!$conn) { echo "Nemáme data!"; return; }
 mysqli_query($conn, "SET NAMES 'utf8mb4'");
 
-// 20min koše
+// 30min koše
 $sql = "
   SELECT 
-    FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(date_time)/1200)*1200) AS bucket,
+    FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(date_time)/1800)*1800) AS bucket,
     AVG(temperature)           AS temperature,
     AVG(temperature_apparent)  AS temperature_apparent,
     AVG(humidity)              AS humidity,

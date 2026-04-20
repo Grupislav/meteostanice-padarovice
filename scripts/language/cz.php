@@ -102,8 +102,10 @@ $lang['graf5dni'] = "Posledních 7 dní";
 
 //dlouhodobý vývoj
 $lang['dlouhodobyvyvoj'] = "Dlouhodobý vývoj";
-$lang['graf30dniteplota'] = "Denní teploty a srážky za posledních 30 dní";
-$lang['graf3rokyteplota'] = "Měsíční teploty a srážky za poslední 3 roky";
+$lang['graf30dniteplota'] = "Denní hodnoty za posledních 30 dní";
+$lang['graf3rokyteplota'] = "Měsíční hodnoty za poslední 3 roky";
+$lang['grafrokyhodnoty'] = "Roční hodnoty";
+$lang['rok2024poznamka'] = "od 13. 11.";
 $lang['graf30dniostatni'] = "Ostatní veličiny za posledních 30 dní (průměry)";
 $lang['graf3rokyostatni'] = "Ostatní veličiny za poslední 3 roky (průměry)";
 $lang['prumernamesicnigraf'] = "Měsíční teploty";

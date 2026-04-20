@@ -62,7 +62,7 @@ if ($minteplotamesic !== null && $maxteplotamesic !== null) {
   </div>";
 }
 
-// --- 3 roky: teploty + srážky ---
+// --- 3 roky: m?sí?ní hodnoty ---
 echo "<table class='tabulkaDnes'><tr><td class='radekDnes'>
         <span class='font25 zelena'>".mb_strtoupper($lang['graf3rokyteplota'],'UTF-8')."</span>
       </td></tr></table>";
@@ -84,3 +84,12 @@ if ($minteplotarok !== null && $maxteplotarok !== null) {
     </div>
   </div>";
 }
+
+// --- roky: ro?ní hodnoty ---
+echo "<table class='tabulkaDnes'><tr><td class='radekDnes'>
+        <span class='font25 zelena'>".mb_strtoupper($lang['grafrokyhodnoty'],'UTF-8')."</span>
+      </td></tr></table>";
+
+echo "<div class='graf' id='graf-roky'>";
+require __DIR__ . '/../grafy/dlouhodoby-vyvoj/roky.php';
+echo "</div>";

@@ -108,8 +108,10 @@ $lang['graf5dni']    = "Last 7 days";
 
 // long-term
 $lang['dlouhodobyvyvoj']    = "Long-term";
-$lang['graf30dniteplota']   = "Daily temperatures & rainfall over last 30 days";
-$lang['graf3rokyteplota']   = "Monthly temperatures & rainfall over last 3 years";
+$lang['graf30dniteplota']   = "Daily values over last 30 days";
+$lang['graf3rokyteplota']   = "Monthly values over last 3 years";
+$lang['grafrokyhodnoty']    = "Annual values";
+$lang['rok2024poznamka']    = "from Nov 13";
 $lang['graf30dniostatni']   = "Other variables over last 30 days (averages)";
 $lang['graf3rokyostatni']   = "Other variables over last 3 years (averages)";
 $lang['prumernamesicnigraf']= "Monthly temperatures";
