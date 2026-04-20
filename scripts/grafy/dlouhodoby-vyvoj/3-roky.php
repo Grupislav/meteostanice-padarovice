@@ -83,8 +83,8 @@ jQuery(function($){
     legend:{ layout:'horizontal', align:'left', x:6, verticalAlign:'top', y:-5, floating:true, backgroundColor:'#fff' },
     series: [
       { name:'<?= $lang['avg'] ?>',  type:'spline', color:'#ebb91f', yAxis:0, data:<?= json_encode($yAvg) ?>, marker:{enabled:false} },
-      { name:'<?= $lang['max'] ?>',  type:'spline', color:'#c01212', yAxis:0, data:<?= json_encode($yMax) ?>, marker:{enabled:false}, visible:false },
-      { name:'<?= $lang['min'] ?>',  type:'spline', color:'#1260c0', yAxis:0, data:<?= json_encode($yMin) ?>, marker:{enabled:false}, visible:false },
+      { name:'<?= $lang['max'] ?>',  type:'spline', color:'#c01212', yAxis:0, data:<?= json_encode($yMax) ?>, marker:{enabled:false} },
+      { name:'<?= $lang['min'] ?>',  type:'spline', color:'#1260c0', yAxis:0, data:<?= json_encode($yMin) ?>, marker:{enabled:false} },
       { name:'<?= $lang['srazky'] ?>', type:'column', color:'#0066ff', yAxis:1, data:<?= json_encode($yRain) ?>, marker:{enabled:false} },
 
       { name:'<?= $lang['rosnybod'] ?>',  type:'spline', color:'#009933', yAxis:0, data:<?= json_encode($yDew) ?>, marker:{enabled:false}, visible:false },

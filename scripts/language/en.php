@@ -84,6 +84,7 @@ $lang['pocteplota']         = "Feels-like temperature";
 $lang['pocteplotazkratka']  = "Feels-like temp.";
 $lang['tlak']               = "Pressure";
 $lang['srazky']             = "Precipitation";
+$lang['uhrnsrazek']         = "Total precipitation";
 $lang['kumsrazkyden']       = "Daily precipitation";
 $lang['kumsrazkytyden']     = "Weekly precipitation";
 $lang['osvit']              = "Irradiance";

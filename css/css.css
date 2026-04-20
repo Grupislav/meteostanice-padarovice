@@ -527,6 +527,12 @@ legend{color: white;background: #00a186;border: 1px solid #00a186;padding: 2px 6
   align-items:center;
 }
 
+.karty-wrap--tri .kartapodgrafy{
+  flex:1 1 240px;
+  min-width:220px;
+  max-width:calc(33.333% - 11px);
+}
+
 /* Popisek pod hodnotou */
 .kartapodgrafy .popis{
   color:white;

@@ -78,6 +78,7 @@ $lang['pocteplota'] = "Pocitová teplota";
 $lang['pocteplotazkratka'] = "Poc. teplota";
 $lang['tlak'] = "Tlak";
 $lang['srazky'] = "Srážky";
+$lang['uhrnsrazek'] = "Úhrn srážek";
 $lang['kumsrazkyden'] = "Denní srážky";
 $lang['kumsrazkytyden'] = "Týdenní srážky";
 $lang['osvit'] = "Osvit";
