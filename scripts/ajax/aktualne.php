@@ -9,17 +9,13 @@ $toFloat = static function ($v): ?float {
     $s = (string)$v;
     return is_numeric($s) ? (float)$s : null;
 };
-$toInt = static function ($v): ?int {
-    if ($v === null) return null;
-    $s = (string)$v;
-    return is_numeric($s) ? (int)$s : null;
-};
 $wxLabel = static function ($code) use ($lang): string {
-    $key = Pocasi($code ?? 0);                  // 'jasno' | 'dest' | …
-    return $lang[$key] ?? $key;                 // fallback, kdyby v $lang nebyl
+    if ($code === null) return '—';             // stav oblohy se nepodařilo zjistit
+    $key = Pocasi($code);                        // 'jasno' | 'dest' | …
+    return $lang[$key] ?? $key;                  // fallback, kdyby v $lang nebyl
 };
 
-/* ────────── Live data z Ecowitt + doplňkové XML ────────── */
+/* ────────── Live data z Ecowitt + stav oblohy z Open-Meteo ────────── */
 $params = [
   'application_key'   => $ecowitt['application_key'],
   'api_key'           => $ecowitt['api_key'],
@@ -33,23 +29,24 @@ $ecoUrl = 'https://api.ecowitt.net/api/v3/device/real_time?' . http_build_query(
 $ecoJson = curl_get_file_contents($ecoUrl);
 $data = $ecoJson ? json_decode($ecoJson) : null;
 
-$meteoPocasiApiId = isset($meteoPocasiApiId) ? trim((string)$meteoPocasiApiId) : '';
-$xmlString = '';
-if ($meteoPocasiApiId !== '') {
-    $xmlUrl = 'http://api.meteo-pocasi.cz/api.xml?action=get-meteo-data&client=xml&id=' . rawurlencode($meteoPocasiApiId);
-    $xmlString = (string)curl_get_file_contents($xmlUrl);
-}
-$xml = $xmlString !== '' ? @simplexml_load_string($xmlString) : null;
-if ($xml === false) {
-    $xml = null;
-}
-
-$wxSensorCode = static function ($xml) use ($toInt) {
-    if ($xml === null || $xml === false || !isset($xml->input->sensor[0])) {
-        return null;
+/* Stav oblohy z Open-Meteo (bez API klíče, funguje i v noci – nevychází z osvitu).
+   Souřadnice stanice bereme ze stejné konfigurace jako astronomie ($ipgeo). */
+$skyCode = null;
+$omLat = isset($ipgeo['lat'])  ? trim((string)$ipgeo['lat'])  : '';
+$omLon = isset($ipgeo['long']) ? trim((string)$ipgeo['long']) : '';
+if (is_numeric($omLat) && is_numeric($omLon)) {
+    $omUrl = 'https://api.open-meteo.com/v1/forecast?' . http_build_query([
+        'latitude'  => $omLat,
+        'longitude' => $omLon,
+        'current'   => 'weather_code,cloud_cover',
+        'timezone'  => 'auto',
+    ], '', '&', PHP_QUERY_RFC3986);
+    $omJson = curl_get_file_contents($omUrl);
+    $om = $omJson ? json_decode($omJson) : null;
+    if ($om !== null && isset($om->current)) {
+        $skyCode = pocasiZOpenMeteo($om->current->weather_code ?? null, $om->current->cloud_cover ?? null);
     }
-    return $toInt($xml->input->sensor[0]->value ?? null);
-};
+}
 
 /* ────────── Je k dispozici živá teplota? ────────── */
 $hasLive = isset($data->data->outdoor->temperature->value)
@@ -154,7 +151,7 @@ if ($hasLive) {
     $aktnarazvetru = $toFloat($data->data->wind->wind_gust->value);
     $aktsmervetru  = $toFloat($data->data->wind->wind_direction->value);
     $aktsrazky     = $toFloat($data->data->rainfall->daily->value);
-    $aktpocasi     = $wxSensorCode($xml);
+    $aktpocasi     = $skyCode;
     $aktualizovano = date("d.m.Y G:i", (int)($data->time ?? time()));
 
     $render([
@@ -189,7 +186,7 @@ if ($t) {
     $aktnarazvetru = $toFloat($t['wind_gust']          ?? null);
     $aktsmervetru  = $toFloat($t['wind_direction']     ?? null);
     $aktsrazky     = $toFloat($t['rain_daily']         ?? null);
-    $aktpocasi     = $wxSensorCode($xml);
+    $aktpocasi     = $skyCode;
     $aktualizovano = $t['date_time'] ? date("d.m.Y G:i", strtotime($t['date_time'])) : date("d.m.Y G:i");
 
     $render([

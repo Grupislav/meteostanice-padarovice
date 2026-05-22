@@ -127,7 +127,7 @@ nav ul > li > a { cursor: default; }
 .teplota25 { background-color: #ff6600; }
 .teplota30 { background-color: #ff3300; }
 .teplota35 { background-color: #cc2900; }
-/*obarvení osvitu*/
+/*obarvenï¿½ osvitu*/
 .osvitneni { background-color: black; }
 .osvit0 { background-color: #999900; }
 .osvit100 { background-color: #cccc00; }
@@ -172,11 +172,11 @@ nav ul > li > a { cursor: default; }
 .vitr16 { background-color: #007db3; }
 .vitr22 { background-color: #006b99; }
 /*obarveni uv indexu*/
-.uvi0  { background-color: #00cc66; color: #fff; }  /* Nízké */
-.uvi3  { background-color: #ffff00; color: #000; }  /* Mírné */
-.uvi6  { background-color: #ff9933; color: #000; }  /* Vysoké */
-.uvi8  { background-color: #ff3300; color: #fff; }  /* Velmi vysoké */
-.uvi11 { background-color: #cc33cc; color: #fff; }  /* Extrémní */
+.uvi0  { background-color: #00cc66; color: #fff; }  /* Nï¿½zkï¿½ */
+.uvi3  { background-color: #ffff00; color: #000; }  /* Mï¿½rnï¿½ */
+.uvi6  { background-color: #ff9933; color: #000; }  /* Vysokï¿½ */
+.uvi8  { background-color: #ff3300; color: #fff; }  /* Velmi vysokï¿½ */
+.uvi11 { background-color: #cc33cc; color: #fff; }  /* Extrï¿½mnï¿½ */
 
 /* Highcharts */
 .graf { width: 100%; margin: 20px 0; }
@@ -516,7 +516,7 @@ legend{color: white;background: #00a186;border: 1px solid #00a186;padding: 2px 6
 /* Jedna karta */
 .kartapodgrafy{
   box-sizing:border-box;
-  flex:1 1 320px;      /* 2 vedle sebe, na úzkém 1 sloupec */
+  flex:1 1 320px;      /* 2 vedle sebe, na ï¿½zkï¿½m 1 sloupec */
   min-width:260px;
   max-width:calc(50% - 8px);
   border-radius:2px;
@@ -540,7 +540,15 @@ legend{color: white;background: #00a186;border: 1px solid #00a186;padding: 2px 6
   margin:4px 0 0 0;
 }
 
-/* graf drž v rodièi */
+/* srovnï¿½vacï¿½ normï¿½l u srï¿½ek (mï¿½sï¿½ï¿½nï¿½/roï¿½nï¿½) - nenï¿½padnï¿½ vedlejï¿½ï¿½ ï¿½daj */
+.aktuamens .normal{
+  font-size:13px;
+  font-weight:normal;
+  opacity:0.8;
+  white-space:nowrap;
+}
+
+/* graf drï¿½ v rodiï¿½i */
 .graf{ max-width:100%; overflow:hidden; }
 
 .legend-list { list-style: none; margin: 8px 0 0; padding: 0; }

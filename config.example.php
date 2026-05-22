@@ -44,11 +44,12 @@ $ecowitt = [
 ];
 
 // --- ipgeolocation.io (astronomie apod.) ---
+// Souřadnice (lat/long) se používají i pro stav oblohy u „aktuálního počasí“ (Open-Meteo).
 $ipgeo = [
   'apiKey' => 'YOUR_IPGEO_API_KEY',
   'lat'    => '50.0000000',
   'long'   => '15.0000000',
 ];
 
-// Volitelné: ID pro api.meteo-pocasi.cz (stav oblohy u „aktuálního počasí“). Prázdné = API se nevolá.
-$meteoPocasiApiId = '';
+// Pozn.: stav oblohy u „aktuálního počasí“ se bere z Open-Meteo (bez API klíče, funguje i v noci)
+// podle souřadnic v $ipgeo. Dřívější $meteoPocasiApiId (api.meteo-pocasi.cz) se už nepoužívá.

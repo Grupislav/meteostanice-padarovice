@@ -5,27 +5,6 @@ if (!function_exists('e')) {
         return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 }
-if (!function_exists('urlWithParams')) {
-    function urlWithParams(array $params): string {
-        // Vezme aktuální URL bez query a přidá/aktualizuje parametry
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $path   = strtok($_SERVER['REQUEST_URI'] ?? '/', '?'); // bez query
-        // Sloučí existující GET s novými parametry
-        $merged = array_merge($_GET, $params);
-        return $scheme . '://' . $host . $path . '?' . http_build_query($merged, '', '&', PHP_QUERY_RFC3986);
-    }
-}
-
-function FazeMesice($cislo) {
-    $i = (int)$cislo; // <- DŮLEŽITÉ
-    $map = [
-        1=>'nov', 2=>'dorusta', 3=>'prvnictvrt', 4=>'dorustamesic',
-        5=>'uplnek', 6=>'couva', 7=>'poslednictvrt', 8=>'ubyva'
-    ];
-    return $map[$i] ?? 'chyba';
-}
-
 // směr větru (stupně mohou přijít jako SimpleXMLElement/string)
 function SmerVetru($deg) {
     $d = (float)$deg;                       // <- DŮLEŽITÉ
@@ -51,89 +30,35 @@ function Pocasi($cislo) {
 }
 
 /**
- * formatData() vrací datum a čas
- * @param $datum
- * @return string
+ * Odvodí kód stavu oblohy (1–6 dle Pocasi()) z dat Open-Meteo. Funguje i v noci,
+ * protože nevychází z osvitu, ale z modelové oblačnosti a srážek.
+ *  - $weatherCode … WMO weather_code z Open-Meteo
+ *  - $cloudCover  … oblačnost v % (cloud_cover)
+ * Vrací 1 jasno, 2 skoro jasno, 3 polojasno, 4 zataženo, 5 přeháňky, 6 déšť; null = nelze určit.
  */
+function pocasiZOpenMeteo($weatherCode, $cloudCover): ?int {
+    $wc = is_numeric($weatherCode) ? (int)$weatherCode : null;
+    $cc = is_numeric($cloudCover)  ? (float)$cloudCover : null;
 
-function formatData($datum) {
-    $dt = date_create((string)$datum); // <- přetypovat na string
-    return $dt ? $dt->format('j.n.Y H:i') : (string)$datum;
+    if ($wc !== null) {
+        // přeháňky (přerušované srážky – déšť/sníh)
+        if (in_array($wc, [80, 81, 82, 85, 86], true)) return 5;
+        // souvislé srážky: mrholení 51–57, déšť 61–67, sníh 71–77, bouřky 95–99
+        if (($wc >= 51 && $wc <= 77) || $wc >= 95) return 6;
+        // mlha (45, 48) → bereme jako zataženo
+        if ($wc === 45 || $wc === 48) return 4;
+    }
+
+    if ($cc === null) return null;
+    if ($cc <= 12) return 1; // jasno
+    if ($cc <= 37) return 2; // skoro jasno
+    if ($cc <= 75) return 3; // polojasno
+    return 4;                // zataženo
 }
 
 function formatDnu($datum) {
     $dt = date_create($datum);
     return $dt ? $dt->format('j. n. Y') : (string)$datum;
-}
-
-/**
- * fahrenheit();
- * @param $teplota
- * @return float
- */
-function fahrenheit($teplota)
-{
-    return round((1.8 * $teplota) + 32, 1);
-}
-
-/**
- * kelvin();
- * @param $teplota
- * @return float
- */
-function kelvin($teplota)
-{
-    return round($teplota + 273.15, 1);
-}
-
-/**
- * rankine();
- * @param $teplota
- * @return float
- */
-function rankine($teplota)
-{
-    return round(($teplota + 273.15) * (9 / 5), 1);
-}
-
-/**
- * delisle();
- * @param $teplota
- * @return float
- */
-function delisle($teplota)
-{
-    return round((100 - $teplota) * (3 / 2), 1);
-}
-
-/**
- * newton();
- * @param $teplota
- * @return float
- */
-function newton($teplota)
-{
-    return round($teplota * (33 / 100), 1);
-}
-
-/**
- * reaumur();
- * @param $teplota
- * @return float
- */
-function reaumur($teplota)
-{
-    return round($teplota * (4 / 5), 1);
-}
-
-/**
- * romer();
- * @param $teplota
- * @return float
- */
-function romer($teplota)
-{
-    return round($teplota * (21 / 40) + 7.5, 1);
 }
 
 function jednotkaTeploty($teplota = "", $jednotka = "C", $znak = 0) {
@@ -167,65 +92,6 @@ if (!function_exists('jednotkaSymbol')) {
     }
   }
 }
-
-/**
- * jeVikend() - podle date urci typ dne
- * @param date $datum
- * @return int
- */
-
-function jeVikend($datum)
-{
-    $denVTydnu = date("N", mktime(0, 0, 0, substr($datum, 5, 2), substr($datum, 8, 2), substr($datum, 0, 4)));
-    if($denVTydnu == 6 OR $denVTydnu == 7)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-/**
- * rosnyBod();
- * @param float $teplota
- * @param float $vlhkost
- * @return float
- */
-
-/*function rosnyBod($teplota, $vlhkost)
-{
-    // Temperature    Range      Tn (°C)         m
-    // Above water    0 – 50°C    243.12     17.62
-    // Above ice     -40 – 0°C    272.62     22.46
-
-    if(is_numeric($teplota) AND is_numeric($vlhkost) AND $teplota != 0 AND $vlhkost != 0)
-    {
-
-        if($teplota > 0)
-        {
-            return round(243.12 * ((log($vlhkost / 100) + ((17.62 * $teplota) / (243.12 + $teplota))) / (17.62 - log($vlhkost / 100) - ((17.62 * $teplota) / (243.12 + $teplota)))), 1);
-        }
-        else
-        {
-            return round(272.62 * ((log($vlhkost / 100) + ((22.46 * $teplota) / (272.62 + $teplota))) / (22.46 - log($vlhkost / 100) - ((22.46 * $teplota) / (272.62 + $teplota)))), 1);
-        }
-
-    }
-    else
-    {
-        return "null";
-    }
-}*/
-
-/**
- * Funkce vrátí datetime z MySQL naformátované do tvaru,
- * který je v vystup-XML.php
- *
- * @param datetime $datetime
- * @return string
- */
 
 function barvaRameckuTeploty($teplota)
 {
@@ -278,21 +144,48 @@ function barvaRameckuVlhkost($vlhkost)
     return $trida;
 }
 
-function barvaRameckuSrazky($srazky)
+/**
+ * Vybere CSS třídu pro barvu rámečku srážek podle hodnoty a zadané stupnice.
+ * Stupnice je pole 11 vzestupných prahů – odpovídá 12 barvám (srazkynejsou + srazky0..srazky45).
+ * Barvy (CSS třídy) jsou stejné pro všechny stupnice, mění se jen prahy.
+ */
+function barvaRameckuSrazkyStupnice($srazky, array $skoky)
 {
+    // názvy barev jsou historicky odvozené z denní stupnice (0..45), proto je držíme jako fixní
+    $barvy = ['srazky0','srazky3','srazky6','srazky10','srazky15','srazky20','srazky25','srazky30','srazky35','srazky40','srazky45'];
+
     $trida = " srazkynejsou";
-
-    $skoky = [0, 3, 6, 10, 15, 20, 25, 30, 35, 40, 45];
-
-    foreach($skoky as $skok)
+    foreach ($skoky as $i => $skok)
     {
-        if($srazky > $skok)
+        if ($srazky > $skok && isset($barvy[$i]))
         {
-            $trida = " srazky" . (string)$skok;
+            $trida = " " . $barvy[$i];
         }
     }
 
     return $trida;
+}
+
+// Denní úhrn (mm/den): jemná stupnice 0–45 mm.
+function barvaRameckuSrazky($srazky)
+{
+    return barvaRameckuSrazkyStupnice($srazky, [0, 3, 6, 10, 15, 20, 25, 30, 35, 40, 45]);
+}
+
+// Měsíční úhrn (mm/měsíc). Vychází z dlouhodobých normálů pro Turnov:
+// průměr ~63 mm/měs (nejsušší ~25, nejdeštivější červenec ~100 mm), proto průměrný
+// měsíc padne doprostřed stupnice; >200 mm = mimořádně mokrý měsíc (červená).
+function barvaRameckuSrazkyMesic($srazky)
+{
+    return barvaRameckuSrazkyStupnice($srazky, [0, 10, 20, 35, 50, 65, 80, 100, 125, 160, 200]);
+}
+
+// Roční úhrn (mm/rok). Dlouhodobý normál pro Turnov ~750–880 mm/rok
+// (celorepublikový normál 1991–2020 je 684 mm), proto normální rok padne doprostřed
+// stupnice; >1700 mm = extrémně mokrý rok (červená).
+function barvaRameckuSrazkyRok($srazky)
+{
+    return barvaRameckuSrazkyStupnice($srazky, [0, 150, 300, 450, 600, 750, 900, 1050, 1200, 1400, 1700]);
 }
 
 function barvaRameckuTlak($tlak)

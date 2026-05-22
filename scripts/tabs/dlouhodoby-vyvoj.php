@@ -6,7 +6,7 @@ require_once __DIR__ . "/../variableCheck.php";
 
 $TABLE = "history_cron_padarovice";
 
-// ùù MIN/MAX aktuùlnù mùsùc ùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùù
+// ÔøΩÔøΩ MIN/MAX aktuÔøΩlnÔøΩ mÔøΩsÔøΩc ÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩ
 $conn = mysqli_connect($dbServer,$dbUzivatel,$dbHeslo,$dbDb);
 if (!$conn) { exit("Nejaky problem s DB: " . mysqli_connect_error()); }
 
@@ -26,7 +26,7 @@ if ($resM && mysqli_num_rows($resM) > 0) {
   $srazkymesic = is_null($row['srazkymesic']) ? 0.0 : round((float)$row['srazkymesic'], 1);
 }
 
-// ùù MIN/MAX aktuùlnù rok ùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùùù
+// ÔøΩÔøΩ MIN/MAX aktuÔøΩlnÔøΩ rok ÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩ
 $sqlR = "
   SELECT MAX(temperature) AS maxteplotarok,
          MIN(temperature) AS minteplotarok,
@@ -41,9 +41,22 @@ if ($resR && mysqli_num_rows($resR) > 0) {
   $minteplotarok = (float)$row['minteplotarok'];
   $srazkyrok = is_null($row['srazkyrok']) ? 0.0 : round((float)$row['srazkyrok'], 1);
 }
+
+// Srazkove normaly (WMO 1991-2020) z DB:
+// mesicni = normal aktualniho mesice, rocni = soucet 12 mesicnich normalu
+$normMesic = null; $normRok = null;
+$sqlN = "
+  SELECT
+    (SELECT normal19912020 FROM precipitation_normals WHERE month = MONTH(CURDATE())) AS norm_mesic,
+    (SELECT SUM(normal19912020) FROM precipitation_normals)                            AS norm_rok";
+$resN = mysqli_query($conn, $sqlN);
+if ($resN && ($row = mysqli_fetch_assoc($resN))) {
+  $normMesic = is_null($row['norm_mesic']) ? null : (int)round((float)$row['norm_mesic']);
+  $normRok   = is_null($row['norm_rok'])   ? null : (int)round((float)$row['norm_rok']);
+}
 mysqli_close($conn);
 
-// --- 30 dnù: teploty + srùky ---
+// --- 30 dnÔøΩ: teploty + srÔøΩky ---
 echo "<table class='tabulkaDnes'><tr><td class='radekDnes'>
         <span class='font25 zelena'>".mb_strtoupper($lang['graf30dniteplota'],'UTF-8')."</span>
       </td></tr></table>";
@@ -63,14 +76,14 @@ if ($minteplotamesic !== null && $maxteplotamesic !== null) {
       <div class='popis'>{$lang['maxmesic']}</div>
       <div class='aktuamens'>". jednotkaTeploty($maxteplotamesic, $u, 1) ."</div>
     </div>
-    <div class='kartapodgrafy ". barvaRameckuSrazky($srazkymesic) ."'>
+    <div class='kartapodgrafy ". barvaRameckuSrazkyMesic($srazkymesic) ."'>
       <div class='popis'>{$lang['uhrnsrazekmesic']}</div>
-      <div class='aktuamens'>". $srazkymesic ." mm</div>
+      <div class='aktuamens'>". $srazkymesic ." mm" . ($normMesic !== null ? " <span class='normal'>({$lang['normalzkr']} {$normMesic} mm)</span>" : "") . "</div>
     </div>
   </div>";
 }
 
-// --- 3 roky: m?sù?nù hodnoty ---
+// --- 3 roky: m?sÔøΩ?nÔøΩ hodnoty ---
 echo "<table class='tabulkaDnes'><tr><td class='radekDnes'>
         <span class='font25 zelena'>".mb_strtoupper($lang['graf3rokyteplota'],'UTF-8')."</span>
       </td></tr></table>";
@@ -90,14 +103,14 @@ if ($minteplotarok !== null && $maxteplotarok !== null) {
       <div class='popis'>{$lang['maxrok']}</div>
       <div class='aktuamens'>". jednotkaTeploty($maxteplotarok, $u, 1) ."</div>
     </div>
-    <div class='kartapodgrafy ". barvaRameckuSrazky($srazkyrok) ."'>
+    <div class='kartapodgrafy ". barvaRameckuSrazkyRok($srazkyrok) ."'>
       <div class='popis'>{$lang['uhrnsrazekrok']}</div>
-      <div class='aktuamens'>". $srazkyrok ." mm</div>
+      <div class='aktuamens'>". $srazkyrok ." mm" . ($normRok !== null ? " <span class='normal'>({$lang['normalzkr']} {$normRok} mm/{$lang['rokzkr']})</span>" : "") . "</div>
     </div>
   </div>";
 }
 
-// --- roky: ro?nù hodnoty ---
+// --- roky: ro?nÔøΩ hodnoty ---
 echo "<table class='tabulkaDnes'><tr><td class='radekDnes'>
         <span class='font25 zelena'>".mb_strtoupper($lang['grafrokyhodnoty'],'UTF-8')."</span>
       </td></tr></table>";

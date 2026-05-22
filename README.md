@@ -29,7 +29,7 @@ Repozitář obsahuje zdrojáky webu; **citlivé údaje nejsou v Gitu** — loká
 ### Lokální spuštění
 
 1. Zkopíruj `config.example.php` → `config.php` a doplň údaje k DB a API (**Ecowitt**, případně **ipgeolocation.io**).  
-2. Volitelně `$meteoPocasiApiId` – ID pro api.meteo-pocasi.cz (stav oblohy u aktuálního počasí); bez něj se toto API nevolá.  
+2. Stav oblohy u aktuálního počasí se počítá z **Open-Meteo** (bez API klíče, funguje i v noci) podle souřadnic `$ipgeo['lat']`/`['long']`.  
 3. Nastav `$appBasePath`: prázdný řetězec pro kořen webu, nebo cestu k podadresáři (např. `/meteostanice-padarovice`).  
 4. V kořeni projektu např. `php -S localhost:8080` a otevři prohlížeč.
 
