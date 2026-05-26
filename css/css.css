@@ -39,25 +39,17 @@ ul.tabs a.current { background: #f2f2f2 url("../images/stavy.png") no-repeat cen
 .tabulkaVHlavicce { width: 100%; margin: 8px 0; border-spacing: 0; }
 .tabulkaVHlavicce tr td a { color: rgb(70, 70, 70); }
 tr.radek td a { color: white; }
-.tabulkaVHlavicceModal { width: 100%; max-width: 600px; margin: 10px auto; float: center }
-.tabulkaVHlavicceModalMensi { width: 100%; max-width: 300px; margin: 10px auto; float: center }
-#hlavni table, .tabulkaVHlavicceModal, .tabulkaVHlavicceModalMensi { border-collapse: collapse; border-spacing: 0; }
-#hlavni table tr:first-child, .tabulkaVHlavicce tr:first-child, .tabulkaVHlavicceModal tr:first-child, .tabulkaVHlavicceModalMensi tr:first-child { background: #00a186; }
-#hlavni table tr:nth-child(odd), .tabulkaVHlavicce tr:nth-child(odd), .tabulkaVHlavicceModal tr:nth-child(odd), .tabulkaVHlavicceModalMensi tr:nth-child(odd) { background: #e4f7f3; }
+#hlavni table { border-collapse: collapse; border-spacing: 0; }
+#hlavni table tr:first-child, .tabulkaVHlavicce tr:first-child { background: #00a186; }
+#hlavni table tr:nth-child(odd), .tabulkaVHlavicce tr:nth-child(odd) { background: #e4f7f3; }
 .zelenyRadek td { background: #00a186 !important; font-size: 18px; height: 36px;}
 .zelenyRadekStredovy td { background: #00a186 !important; font-size: 18px; height: 35px;}
 .modryRadek td { background: #34495e !important; }
 .tabulkaDnes { width: 100%; margin: 25px 0; border-spacing: 0; }
 .radekDnes{ line-height: 26px; vertical-align: center; font-size: 18px; background: #F2F2F2; }
 table tr { background: white; }
-.sedaBunka { background: #f2f2f2; }
-.padding5 { padding: 0 5px; }
 /* radky */
 .radek { background: #00a186; color: white; }
-.radekVelky { background: #00a186; color: white; line-height: 24px; vertical-align: center; font-size: 14px; }
-.radekVetsi { background: #00a186; color: white; line-height: 28px; vertical-align: center; font-size: 12px; }
-.radekStat td { }
-.radekStat:hover td { background: #f3f2dd; }
 /* tooltipy */
 .tooltip { position: relative; display: inline-block; border-bottom: 1px dotted black; }
 .tooltip .tooltiptext { visibility: hidden; width: 200px; background-color: #555; color: #fff; text-align: center; border-radius: 6px; padding: 5px 0; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px; opacity: 0; transition: opacity 0.3s; }
@@ -86,32 +78,17 @@ nav ul > li > a { cursor: default; }
 /* okenko s aktualne */
 .sloupekAktualne { margin: 8px auto; float: none; overflow: hidden; }
 .aktualne { background: /*url("../images/stavy.png")*/ no-repeat top left #E74C3C; margin: 0 0 5px 0; border: 0; height: 120px; color: white; line-height: 32px; width: 100%; border-radius:2px;}
-.aktualnejen { background: /*url("../images/stavy.png")*/ no-repeat top left #E74C3C; width: 100%; margin: 0 0 3px 0; border: 0; height: 190px; color: white; line-height: 56px; border-radius:2px;}
 .aktua { color: white; font-size: 35px; line-height: 42px; vertical-align: center; }
-.aktuajen { color: white; font-size: 35px; line-height: 60px; vertical-align: center; }
 .aktualneMensi { background: /*url("../images/stavy.png")*/ no-repeat top center; font-size: 11px; margin: 2px 0 0 0; padding: 4px 0 4px 0; float: left; width: 49%; border: 0; height: 65px; color: white; line-height: 22px; border-radius:2px; }
 .aktualnetretinka { background: /*url("../images/stavy.png")*/ no-repeat top center; font-size: 11px; margin: 0 0 0 0; padding: 8px 0 8px 0; float: left; width: 100%; border: 0; height: 65px; color: white; line-height: 22px; border-radius:2px;}
 .aktualneMensiVitr { background-color: #009de1; }
-.aktualneMensiRosnyBod { background-color: #00a186; }
 .aktuamens { color: white; font-size: 20px; }
 .ajaxrefresh { min-height: 220px; transition: opacity 0.2s ease; }
 .ajaxrefresh.ajax-loading { opacity: 0.6; pointer-events: none; }
 .aktuamens.cerna { color:#666; }
-.aktuamenscerna { color: #666666;; font-size: 20px; }
 .aktualneOdskok { padding: 9px 0 0 0; }
 .aktualneAktualizovano {background: no-repeat top center; font-size: 13px; margin: 5px 0 0 0; padding: 8px 0 -8px 0; float: left; width: 100%; border: 0; height: 35px; color: white; line-height: 35px; background-color: #00cc66; border-radius:2px;}
 .aktualneNeaktualizovano {background: no-repeat top center; font-size: 13px; margin: 5px 0 0 0; padding: 8px 0 -8px 0; float: left; width: 100%; border: 0; height: 35px; color: white; line-height: 35px; background-color: #e60000; border-radius:2px;}
-/* sipky velke */
-.teplejsi { background-position: 90% -104px; }
-.studenejsi { background-position: 90% -227px; }
-.stejne { background-position: 90% 19px; }
-.teplejsijen { background-position: 90% -71px; }
-.studenejsijen { background-position: 90% -195px; }
-.stejnejen { background-position: 90% 51px; }
-/* sipky mensi */
-.teplejsiMalyBox { background-position: 97% -431px; }
-.studenejsiMalyBox { background-position: 97% -499px; }
-.stejneMalyBox { background-position: 97% -361px; }
 /* obarveni teploty */
 .teplota-30 { background-color: #11375f; }
 .teplota-25 { background-color: #194776; }
@@ -172,36 +149,27 @@ nav ul > li > a { cursor: default; }
 .vitr16 { background-color: #007db3; }
 .vitr22 { background-color: #006b99; }
 /*obarveni uv indexu*/
-.uvi0  { background-color: #00cc66; color: #fff; }  /* N�zk� */
-.uvi3  { background-color: #ffff00; color: #000; }  /* M�rn� */
-.uvi6  { background-color: #ff9933; color: #000; }  /* Vysok� */
-.uvi8  { background-color: #ff3300; color: #fff; }  /* Velmi vysok� */
-.uvi11 { background-color: #cc33cc; color: #fff; }  /* Extr�mn� */
+.uvi0  { background-color: #00cc66; color: #fff; }    /* N�zk� */
+.uvi3  { background-color: #ffff00; color: #666666; } /* M�rn� - svetly podklad, sjedn. s .osvit250/.cerna */
+.uvi6  { background-color: #ff9933; color: #666666; } /* Vysok� - svetly podklad, sjedn. s .osvit250/.cerna */
+.uvi8  { background-color: #ff3300; color: #fff; }    /* Velmi vysok� */
+.uvi11 { background-color: #cc33cc; color: #fff; }    /* Extr�mn� */
 
 /* Highcharts */
 .graf { width: 100%; margin: 20px 0; }
-.grafModal { width: 98%; margin: 15px 0; }
 
 /* typo a ruzne*/
 h3 { color: rgb(70, 70, 70); font-size: 20px; line-height: 50px; height: 50px; overflow: hidden; padding: 0 5px 0 5px; margin: 0 0 0 0; vertical-align: middle; }
 br { line-height: 1.5em; }
 a { color: white; }
 a:hover { text-decoration: none; }
-.nomargin { margin: 0; }
 table tr td { height: 23px; line-height: 23px; vertical-align: middle; padding: 4px 0 2px 0; font-size: 17px;}
 hr { height: 1px; width: 100%; border: none; background: #00a186; }
 td { text-align: center; }
-.mesicVDobe { width: 19%; float: left; margin: 5px 1% 5px 0; }
 .rekordyctvrtina { width: 23.9%; min-width: 150px; float: left; margin: 5px 5px; }
 .rekordytretina { width: 32%; min-width: 150px; float: left; margin: 5px 5px; }
-.bilyOdkaz{ color: white !important; }
-.mensi { font-size: 11px; }
-.stred { margin: 0 auto; float: none; text-align: center }
 .vpravo { float: right; }
 .zelena { color: #00a186; }
-.modra { color: #34495e; }
-.upozorneni { color: red; font-size: 22px;}
-.font22 { font-size: 22px; }
 .font25 { font-size: 25px; }
 
 /* formular na strance historie */
@@ -226,7 +194,6 @@ legend{color: white;background: #00a186;border: 1px solid #00a186;padding: 2px 6
 {
   body { margin: 0; }
   #oblastzalozek{ width: 100%; }
-  .aktualnemensi { margin: 5px 0 0 0; }
   #nadpis h1 { font-size: 16px; }
 }
 

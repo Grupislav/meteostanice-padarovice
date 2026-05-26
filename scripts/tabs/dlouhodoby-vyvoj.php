@@ -43,12 +43,12 @@ if ($resR && mysqli_num_rows($resR) > 0) {
 }
 
 // Srazkove normaly (WMO 1991-2020) z DB:
-// mesicni = normal aktualniho mesice, rocni = soucet 12 mesicnich normalu
+// mesicni = normal aktualniho mesice (month = 1..12), rocni = radek se souhrnem (month = 0)
 $normMesic = null; $normRok = null;
 $sqlN = "
   SELECT
     (SELECT normal19912020 FROM precipitation_normals WHERE month = MONTH(CURDATE())) AS norm_mesic,
-    (SELECT SUM(normal19912020) FROM precipitation_normals)                            AS norm_rok";
+    (SELECT normal19912020 FROM precipitation_normals WHERE month = 0)                AS norm_rok";
 $resN = mysqli_query($conn, $sqlN);
 if ($resN && ($row = mysqli_fetch_assoc($resN))) {
   $normMesic = is_null($row['norm_mesic']) ? null : (int)round((float)$row['norm_mesic']);
