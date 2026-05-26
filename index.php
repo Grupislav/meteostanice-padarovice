@@ -13,19 +13,21 @@ if (!function_exists('e')) {
   function e(?string $s): string { return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 }
 
-// Pojistka proti rozbitému configu — whitelist je definovaný v scripts/variableCheck.php ($jazyky, $jednotky)
-$l = in_array($l, array_keys($jazyky), true) ? $l : 'cz';
-$u = in_array($u, array_keys($jednotky), true) ? $u : 'C';
+// Pojistka proti rozbitému configu — whitelist je definovaný v scripts/variableCheck.php ($jazyky, $jednotky, $jednotkyVitr, $jednotkyTlak)
+$l  = in_array($l,  array_keys($jazyky),       true) ? $l  : 'cz';
+$u  = in_array($u,  array_keys($jednotky),     true) ? $u  : 'C';
+$uv = in_array($uv, array_keys($jednotkyVitr), true) ? $uv : 'k';
+$ut = in_array($ut, array_keys($jednotkyTlak), true) ? $ut : 'h';
 
 // Refresh: celé číslo ≥ 0
 $obnoveniStranky = isset($obnoveniStranky) && is_numeric($obnoveniStranky) && (int)$obnoveniStranky >= 0 ? (int)$obnoveniStranky : 0;
 
 // Query string pro ajax/tabs
-$q = http_build_query(['ja' => $l, 'je' => $u], '', '&', PHP_QUERY_RFC3986);
+$q = http_build_query(['ja' => $l, 'je' => $u, 'jv' => $uv, 'jt' => $ut], '', '&', PHP_QUERY_RFC3986);
 
 // Pomocník na stavění URL s udržením parametrů
 function keep_params(array $extra = []): string {
-  $params = ['ja' => $_GET['ja'] ?? null, 'je' => $_GET['je'] ?? null];
+  $params = ['ja' => $_GET['ja'] ?? null, 'je' => $_GET['je'] ?? null, 'jv' => $_GET['jv'] ?? null, 'jt' => $_GET['jt'] ?? null];
   foreach ($extra as $k => $v) $params[$k] = $v;
   return '?' . http_build_query(array_filter($params, fn($v)=>$v!==null), '', '&', PHP_QUERY_RFC3986);
 }
@@ -174,9 +176,11 @@ $htmlLang = $l === 'cz' ? 'cs' : ($l === 'en' ? 'en' : 'cs');
       <nav id="menu">
         <ul>
           <?php
-            // $jazyky a $jednotky přijdou z variableCheck.php
+            // $jazyky, $jednotky, $jednotkyVitr a $jednotkyTlak přijdou z variableCheck.php
             echo renderMenuJazyky($l, array_keys($jazyky), $lang);
             echo renderMenuJednotky($u, $jednotky);
+            echo renderMenuJednotkyVitr($uv, $jednotkyVitr);
+            echo renderMenuJednotkyTlak($ut, $jednotkyTlak);
           ?>
         </ul>
       </nav>

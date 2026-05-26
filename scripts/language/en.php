@@ -38,9 +38,11 @@ $lang['dest']        = "Rain";
 
 // tmep v1-2
 $lang['info']               = "Station info";
+$lang['typstanice']         = "Model";
 $lang['umisteni']           = "Location";
 $lang['pilinkov']           = "Soběslavice - Padařovice";
 $lang['nadmvyska']          = "Altitude";
+$lang['dni']                = "days";
 $lang['posledniaktualizace']= "Updated:";
 $lang['status']             = "Status";
 $lang['rekordy']            = "Records";

@@ -13,7 +13,7 @@ $sql = "
     AVG(temperature)          AS t_avg,
     MIN(temperature)          AS t_min,
     MAX(temperature)          AS t_max,
-    MAX(rain_monthly)         AS rain_m,      -- mìsíèní úhrn
+    MAX(rain_monthly)         AS rain_m,      -- mï¿½sï¿½ï¿½nï¿½ ï¿½hrn
     AVG(dew_point)            AS dew,
     AVG(humidity)             AS hum,
     AVG(pressure_QNH)         AS qnh,
@@ -38,11 +38,13 @@ while($t = mysqli_fetch_assoc($res)){
 
   $yDew[]   = jednotkaTeploty(round((float)$t['dew'],1),   $u, 0);
   $yHum[]   = round((float)$t['hum'],1);
-  $yQnh[]   = round((float)$t['qnh'],1);
+  $yQnh[]   = round(((float)$t['qnh']) * ($ut === 'mm' ? 0.750062 : 1), 1); // hPa â†’ ev. mmHg
   $yExp[]   = round((float)$t['exp'],1);
-  $yWind[]  = round((float)$t['wind'],1);
+  $yWind[]  = round(((float)$t['wind']) * ($uv === 'm' ? 1/3.6 : 1), 1); // km/h â†’ ev. m/s
 }
-// chronologicky vzestupnì
+$jednotkaVit = jednotkaVitrSymbol($uv);
+$jednotkaTl  = jednotkaTlakSymbol($ut);
+// chronologicky vzestupnï¿½
 $labels = array_reverse($labels);
 $yMax   = array_reverse($yMax);
 $yAvg   = array_reverse($yAvg);
@@ -70,13 +72,13 @@ jQuery(function($){
       labels:{ formatter:function(){ return this.value + ' %'; }, style:{ color:'#33cccc' } },
       title:{ text:null, style:{ color:'#33cccc' } }, max:100, ceiling:100, opposite:true
     },{
-      labels:{ formatter:function(){ return this.value + ' hPa'; }, style:{ color:'#800000' } },
+      labels:{ formatter:function(){ return this.value + ' <?= $jednotkaTl ?>'; }, style:{ color:'#800000' } },
       title:{ text:null, style:{ color:'#800000' } }, opposite:true
     },{
       labels:{ formatter:function(){ return this.value + ' W'; }, style:{ color:'#999900' } },
       title:{ text:null, style:{ color:'#999900' } }, opposite:true
     },{
-      labels:{ formatter:function(){ return this.value + ' m/s'; }, style:{ color:'#3399ff' } },
+      labels:{ formatter:function(){ return this.value + ' <?= $jednotkaVit ?>'; }, style:{ color:'#3399ff' } },
       title:{ text:null, style:{ color:'#3399ff' } }, opposite:true
     }],
     tooltip:{ shared:true, crosshairs:true },

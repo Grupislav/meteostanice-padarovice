@@ -18,9 +18,11 @@ $lang['osvitmesice'] = "Míra osvitu Měsíce";
 
 // tmep v1-2
 $lang['info'] = "Informace o meteostanici";
+$lang['typstanice'] = "Typ";
 $lang['umisteni'] = "Umístění";
 $lang['pilinkov'] = "Soběslavice - Padařovice";
 $lang['nadmvyska'] = "Nadmořská výška";
+$lang['dni'] = "dní";
 $lang['posledniaktualizace'] = "Aktualizováno:";
 $lang['status'] = "Status";
 $lang['rekordy'] = "Rekordy";

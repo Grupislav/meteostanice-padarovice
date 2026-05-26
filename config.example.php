@@ -20,8 +20,10 @@ $dbDb       = 'db_name';
 $appBasePath = '/meteostanice-padarovice';
 
 // Jazyk a jednotky – výchozí (povolené hodnoty: scripts/variableCheck.php)
-$l = 'cz'; // cz | en
-$u = 'C';  // C | F
+$l  = 'cz'; // cz | en
+$u  = 'C';  // teplota: C | F
+$uv = 'k';  // vítr: k (km/h) | m (m/s)
+$ut = 'h';  // tlak: h (hPa) | mm (mmHg)
 
 // Auto-refresh v sekundách (0 = vypnuto)
 $obnoveniStranky = 360;

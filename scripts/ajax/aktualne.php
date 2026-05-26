@@ -53,7 +53,7 @@ $hasLive = isset($data->data->outdoor->temperature->value)
            && is_numeric((string)$data->data->outdoor->temperature->value);
 
 /* ────────── Funkce pro vykreslení boxů ────────── */
-$render = function(array $v) use ($lang, $u) {
+$render = function(array $v) use ($lang, $u, $uv, $ut) {
     // $v obsahuje klíče: teplota, vlhkost, rosny, pocitovka, tlak, osvit, uvi, vitr, naraz, smer, srazky, pocasi, aktualizovano
     echo "<div class='aktualne jen jen" . barvaRameckuTeploty($v['teplota']) . "'>
         <div class='aktualneOdskok'>
@@ -94,14 +94,14 @@ $render = function(array $v) use ($lang, $u) {
       <div class='aktualneMensi" . barvaRameckuVitr($v['vitr']) . "'>
         <div class='aktualneOdskok'>
           {$lang['vitr']}<br>
-          <span class='aktuamens'>{$v['vitr']} km/h</span>
+          <span class='aktuamens'>" . jednotkaVitr($v['vitr'], $uv, true) . "</span>
         </div>
       </div>
 
       <div class='aktualneMensi vpravo" . barvaRameckuVitr($v['naraz']) . "'>
         <div class='aktualneOdskok'>
           {$lang['narazy']}<br>
-          <span class='aktuamens'>{$v['naraz']} km/h</span>
+          <span class='aktuamens'>" . jednotkaVitr($v['naraz'], $uv, true) . "</span>
         </div>
       </div>
 
@@ -115,21 +115,21 @@ $render = function(array $v) use ($lang, $u) {
       <div class='aktualneMensi vpravo" . barvaRameckuTlak($v['tlak']) . "'>
         <div class='aktualneOdskok'>
           {$lang['tlak']}<br>
-          <span class='aktuamens'>{$v['tlak']} hPa</span>
+          <span class='aktuamens'>" . jednotkaTlak($v['tlak'], $ut, true) . "</span>
         </div>
       </div>
 
       <div class='aktualneMensi" . barvaRameckuUV($v['uvi']) . "'>
         <div class='aktualneOdskok'>
           {$lang['uvi']}<br>
-          <span class='aktuamens" . (($v['uvi'] > 2 && $v['uvi'] <= 7) ? "cerna" : "") . "'>{$v['uvi']}</span>
+          <span class='aktuamens" . (($v['uvi'] > 2 && $v['uvi'] <= 7) ? " cerna" : "") . "'>{$v['uvi']}</span>
         </div>
       </div>
 
       <div class='aktualneMensi vpravo" . barvaRameckuOsvit($v['osvit']) . "'>
         <div class='aktualneOdskok'>
           {$lang['osvit']}<br>
-          <span class='aktuamens" . ($v['osvit'] < 250 ? "" : "cerna") . "'>{$v['osvit']} W</span>
+          <span class='aktuamens" . ($v['osvit'] < 250 ? "" : " cerna") . "'>{$v['osvit']} W</span>
         </div>
       </div>
 

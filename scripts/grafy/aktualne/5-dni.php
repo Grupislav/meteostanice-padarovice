@@ -4,10 +4,10 @@ require_once __DIR__ . "/../../fce.php";
 require_once __DIR__ . "/../../variableCheck.php";
 
 $conn = mysqli_connect($dbServer,$dbUzivatel,$dbHeslo,$dbDb);
-if (!$conn) { echo "Nemáme data!"; return; }
+if (!$conn) { echo "Nemï¿½me data!"; return; }
 mysqli_query($conn, "SET NAMES 'utf8mb4'");
 
-// 30min koše
+// 30min koï¿½e
 $sql = "
   SELECT 
     FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(date_time)/1800)*1800) AS bucket,
@@ -16,7 +16,7 @@ $sql = "
     AVG(humidity)              AS humidity,
     AVG(dew_point)             AS dew_point,
     AVG(rain_rate)             AS rain_rate,   -- mm/h
-    MAX(rain_weekly)           AS rain_weekly, -- mm (kumulativ za týden)
+    MAX(rain_weekly)           AS rain_weekly, -- mm (kumulativ za tï¿½den)
     AVG(pressure_QNH)          AS pressure_QNH,
     AVG(exposure)              AS exposure,
     AVG(wind_speed)            AS wind_speed
@@ -27,7 +27,7 @@ $sql = "
 $res = mysqli_query($conn, $sql);
 mysqli_close($conn);
 
-if (!$res || mysqli_num_rows($res) <= 0) { echo "Nemáme data!"; return; }
+if (!$res || mysqli_num_rows($res) <= 0) { echo "Nemï¿½me data!"; return; }
 
 $labels=[]; $y1=[]; $y2=[]; $y3=[]; $y4=[]; $y5=[]; $y6=[]; $y7=[]; $y8=[]; $yCumWeek=[];
 while ($r = mysqli_fetch_assoc($res)) {
@@ -38,12 +38,14 @@ while ($r = mysqli_fetch_assoc($res)) {
   $y4[]       = round(jednotkaTeploty((float)$r['dew_point'], $u, 0), 1);
   $y5[]       = is_null($r['rain_rate'])    ? 0 : (float)$r['rain_rate'];         // mm/h
   $yCumWeek[] = is_null($r['rain_weekly'])  ? 0 : round((float)$r['rain_weekly'], 1); // mm
-  $y6[]       = round((float)$r['pressure_QNH'], 1);
+  $y6[]       = round(((float)$r['pressure_QNH']) * ($ut === 'mm' ? 0.750062 : 1), 1); // hPa â†’ ev. mmHg
   $y7[]       = round((float)$r['exposure'], 1);
-  $y8[]       = round((float)$r['wind_speed'], 1);
+  $y8[]       = round(((float)$r['wind_speed']) * ($uv === 'm' ? 1/3.6 : 1), 1); // km/h â†’ ev. m/s
 }
+$jednotkaVit = jednotkaVitrSymbol($uv);
+$jednotkaTl  = jednotkaTlakSymbol($ut);
 
-// štítky a oddìlovaèe dnù
+// ï¿½tï¿½tky a oddï¿½lovaï¿½e dnï¿½
 $plotLines = []; $labelsOut = []; $prevDay = null;
 foreach ($labels as $i => $ts) {
   $day = substr($ts, 0, 10);
@@ -65,37 +67,37 @@ jQuery(function($){
       plotLines: [<?= $plotLinesOut ?>]
     },
     yAxis: [{
-      // 0 — teploty
+      // 0 ï¿½ teploty
       labels: { formatter:function(){ return this.value + ' <?= $jednotka ?>'; }, style:{color:'#c4423f'} },
       title: { text:null, style:{color:'#c4423f'} },
       opposite:false
     },{
-      // 1 — vlhkost
+      // 1 ï¿½ vlhkost
       title:{ text:null, style:{color:'#33cccc'} },
       labels:{ formatter:function(){ return this.value + ' %'; }, style:{color:'#33cccc'} },
       opposite:true, max:100, ceiling:100
     },{
-      // 2 — srážky intenzita (mm/h)
+      // 2 ï¿½ srï¿½ky intenzita (mm/h)
       title:{ text:null, style:{color:'#0066ff'} },
       labels:{ formatter:function(){ return this.value + ' mm/h'; }, style:{color:'#0066ff'} },
       opposite:true
     },{
-      // 3 — tlak
+      // 3 ï¿½ tlak
       title:{ text:null, style:{color:'#800000'} },
-      labels:{ formatter:function(){ return this.value + ' hPa'; }, style:{color:'#800000'} },
+      labels:{ formatter:function(){ return this.value + ' <?= $jednotkaTl ?>'; }, style:{color:'#800000'} },
       opposite:true
     },{
-      // 4 — osvit
+      // 4 ï¿½ osvit
       title:{ text:null, style:{color:'#999900'} },
       labels:{ formatter:function(){ return this.value + ' W'; }, style:{color:'#999900'} },
       opposite:true
     },{
-      // 5 — vítr
+      // 5 ï¿½ vï¿½tr
       title:{ text:null, style:{color:'#3399ff'} },
-      labels:{ formatter:function(){ return this.value + ' m/s'; }, style:{color:'#3399ff'} },
+      labels:{ formatter:function(){ return this.value + ' <?= $jednotkaVit ?>'; }, style:{color:'#3399ff'} },
       opposite:true
     },{
-      // 6 — srážky kumulativ týdnì (mm)
+      // 6 ï¿½ srï¿½ky kumulativ tï¿½dnï¿½ (mm)
       title:{ text:null, style:{color:'#0047b3'} },
       labels:{ formatter:function(){ return this.value + ' mm'; }, style:{color:'#0047b3'} },
       opposite:true
@@ -110,9 +112,9 @@ jQuery(function($){
           '<?= $lang['vlhkost'] ?>'         : ' %',
           '<?= $lang['rosnybod'] ?>'        : ' <?= $jednotka ?>',
           '<?= $lang['srazky'] ?>'          : ' mm/h',
-          '<?= $lang['tlak'] ?>'            : ' hPa',
+          '<?= $lang['tlak'] ?>'            : ' <?= $jednotkaTl ?>',
           '<?= $lang['osvit'] ?>'           : ' W',
-          '<?= $lang['vitr'] ?>'            : ' m/s'
+          '<?= $lang['vitr'] ?>'            : ' <?= $jednotkaVit ?>'
         }[this.series.name] || '';
         return '<b>' + this.x + '</b><br />' +
                '<span style="color:'+this.series.color+'">\u25CF</span> ' +
@@ -122,7 +124,7 @@ jQuery(function($){
     },
     legend: { layout:'horizontal', align:'left', x:6, verticalAlign:'top', y:-5, floating:true, backgroundColor:'#FFFFFF' },
 
-    // ——— poøadí sérií: teploty › kumulativ týdne › ostatní › intenzita srážek ———
+    // ï¿½ï¿½ï¿½ poï¿½adï¿½ sï¿½riï¿½: teploty ï¿½ kumulativ tï¿½dne ï¿½ ostatnï¿½ ï¿½ intenzita srï¿½ek ï¿½ï¿½ï¿½
     series: [{
       name:'<?= $lang['teplota'] ?>',
       type:'spline', color:'#c4423f', yAxis:0,

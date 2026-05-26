@@ -65,32 +65,62 @@ function jednotkaTeploty($teplota = "", $jednotka = "C", $znak = 0) {
     $fmt = function($v, $s='') use($znak){ return $znak ? ($v . " $s") : $v; };
     if ($teplota === "" && $teplota !== 0) { return "-"; }
 
-    switch ($jednotka) {
-        case 'C': return $fmt($teplota, '&deg;C');
-        case 'F': return $fmt(round(1.8*$teplota+32,1), '&deg;F');
-        case 'K': return $fmt(round($teplota+273.15,1), '&deg;K');
-        case 'R': return $fmt(round(($teplota+273.15)*(9/5),1), '&deg;R');
-        case 'D': return $fmt(round((100-$teplota)*(3/2),1), '&deg;De');
-        case 'N': return $fmt(round($teplota*(33/100),1), '&deg;N');
-        case 'Re':return $fmt(round($teplota*(4/5),1), '&deg;Ré');
-        case 'Ro':return $fmt(round($teplota*(21/40)+7.5,1), '&deg;Ro');
-        default:  return "-";
+    if ($jednotka === 'F') {
+        return $fmt(round(1.8*$teplota+32, 1), '&deg;F');
     }
+    return $fmt($teplota, '&deg;C'); // default Celsius
 }
 
 if (!function_exists('jednotkaSymbol')) {
   function jednotkaSymbol(string $u): string {
-    switch ($u) {
-      case 'F':  return '&deg;F';
-      case 'K':  return '&deg;K';
-      case 'R':  return '&deg;R';
-      case 'D':  return '&deg;De';
-      case 'N':  return '&deg;N';
-      case 'Re': return '&deg;Ré';
-      case 'Ro': return '&deg;Ro';
-      default:   return '&deg;C';
-    }
+    return $u === 'F' ? '&deg;F' : '&deg;C';
   }
+}
+
+/**
+ * Symbol jednotky rychlosti větru: 'k' → "km/h", 'm' → "m/s".
+ * Default je km/h (data v DB jsou v km/h).
+ */
+function jednotkaVitrSymbol(string $uv): string {
+    return $uv === 'm' ? 'm/s' : 'km/h';
+}
+
+/**
+ * Převede hodnotu z km/h na zvolenou jednotku ('k' km/h, 'm' m/s) a naformátuje.
+ *  - $v        hodnota v km/h (jak je v DB)
+ *  - $uv       'k' | 'm'
+ *  - $withUnit pripoj symbol jednotky
+ *  - $dec      pocet desetinnych mist
+ */
+function jednotkaVitr($v, string $uv = 'k', bool $withUnit = false, int $dec = 1): string {
+    if ($v === null || $v === '' || !is_numeric($v)) return '—';
+    $val = (float)$v;
+    if ($uv === 'm') $val = $val / 3.6; // km/h → m/s
+    $out = number_format(round($val, $dec), $dec, '.', '');
+    return $withUnit ? $out . ' ' . jednotkaVitrSymbol($uv) : $out;
+}
+
+/**
+ * Symbol jednotky tlaku: 'h' → "hPa", 'mm' → "mmHg".
+ * Default je hPa (data v DB jsou v hPa, Ecowitt pressure_unitid=3).
+ */
+function jednotkaTlakSymbol(string $ut): string {
+    return $ut === 'mm' ? 'mmHg' : 'hPa';
+}
+
+/**
+ * Převede hodnotu z hPa na zvolenou jednotku ('h' hPa, 'mm' mmHg) a naformátuje.
+ *  - $v        hodnota v hPa (jak je v DB)
+ *  - $ut       'h' | 'mm'
+ *  - $withUnit pripoj symbol jednotky
+ *  - $dec      pocet desetinnych mist (default 1)
+ */
+function jednotkaTlak($v, string $ut = 'h', bool $withUnit = false, int $dec = 1): string {
+    if ($v === null || $v === '' || !is_numeric($v)) return '—';
+    $val = (float)$v;
+    if ($ut === 'mm') $val = $val * 0.750062; // hPa → mmHg
+    $out = number_format(round($val, $dec), $dec, '.', '');
+    return $withUnit ? $out . ' ' . jednotkaTlakSymbol($ut) : $out;
 }
 
 function barvaRameckuTeploty($teplota)
@@ -327,6 +357,46 @@ function renderMenuJednotky(string $vybranaJednotka, array $jednotky): string {
     foreach ($jednotky as $index => $label) {
         if ($index !== $vybranaJednotka) {
             $url = htmlspecialchars(url_with_params(['je' => $index]), ENT_QUOTES, 'UTF-8');
+            $html .= "<li><a href=\"$url\" title=\"" . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "\">"
+                  . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "</a></li>";
+        }
+    }
+    $html .= "</ul></li>";
+    return $html;
+}
+
+/**
+ * Vyrenderuje položku menu pro jednotky větru (km/h, m/s).
+ * Mění URL parametr `jv`.
+ */
+function renderMenuJednotkyVitr(string $vybranaJednotka, array $jednotky): string {
+    $currentLabel = $jednotky[$vybranaJednotka] ?? $vybranaJednotka;
+    $html = "<li><a href=\"#\" aria-haspopup=\"true\" title=\"" . htmlspecialchars($currentLabel, ENT_QUOTES, 'UTF-8') . "\">"
+          . htmlspecialchars($currentLabel, ENT_QUOTES, 'UTF-8') . "</a>";
+    $html .= "<ul class=\"vitr\">";
+    foreach ($jednotky as $index => $label) {
+        if ($index !== $vybranaJednotka) {
+            $url = htmlspecialchars(url_with_params(['jv' => $index]), ENT_QUOTES, 'UTF-8');
+            $html .= "<li><a href=\"$url\" title=\"" . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "\">"
+                  . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "</a></li>";
+        }
+    }
+    $html .= "</ul></li>";
+    return $html;
+}
+
+/**
+ * Vyrenderuje položku menu pro jednotky tlaku (hPa, mmHg).
+ * Mění URL parametr `jt`.
+ */
+function renderMenuJednotkyTlak(string $vybranaJednotka, array $jednotky): string {
+    $currentLabel = $jednotky[$vybranaJednotka] ?? $vybranaJednotka;
+    $html = "<li><a href=\"#\" aria-haspopup=\"true\" title=\"" . htmlspecialchars($currentLabel, ENT_QUOTES, 'UTF-8') . "\">"
+          . htmlspecialchars($currentLabel, ENT_QUOTES, 'UTF-8') . "</a>";
+    $html .= "<ul class=\"tlak\">";
+    foreach ($jednotky as $index => $label) {
+        if ($index !== $vybranaJednotka) {
+            $url = htmlspecialchars(url_with_params(['jt' => $index]), ENT_QUOTES, 'UTF-8');
             $html .= "<li><a href=\"$url\" title=\"" . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "\">"
                   . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "</a></li>";
         }

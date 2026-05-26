@@ -36,7 +36,7 @@ ul.tabs a.current { background: #f2f2f2 url("../images/stavy.png") no-repeat cen
 .panely > div { display:none; border-width:0 1px 1px 1px; min-height:80px; padding:8px 15px; background-color: #f2f2f2; }
 
 /* tabulky */
-.tabulkaVHlavicce { width: 100%; margin: 8px 0; border-spacing: 0; }
+.tabulkaVHlavicce { width: 100%; margin: 0 0 8px 0; border-spacing: 0; }
 .tabulkaVHlavicce tr td a { color: rgb(70, 70, 70); }
 tr.radek td a { color: white; }
 #hlavni table { border-collapse: collapse; border-spacing: 0; }
@@ -70,13 +70,18 @@ nav ul ul { background: #2c3f52; border-radius: 0; padding: 0; position: absolut
 nav ul ul li { float: none; border-bottom: 1px solid #2C3E50; position: relative; }
 nav ul ul.jazyk li a { padding: 15px 30px; color: #fff; }
 nav ul ul.teplota li a { padding: 15px 16px; color: #fff; }
+nav ul ul.vitr li a { padding: 15px 16px; color: #fff; }
+nav ul ul.tlak li a { padding: 15px 16px; color: #fff; }
 nav ul ul li:hover { background: #4b545f; }
 nav ul ul { display: none; }
 nav ul li:hover > ul { display: block; }
 nav ul > li > a { cursor: default; }
 
 /* okenko s aktualne */
-.sloupekAktualne { margin: 8px auto; float: none; overflow: hidden; }
+/* spolecny wrapper pro tri sloupce v hlavicce: BFC (flow-root) drzi floaty
+   a brani margin-collapse s rodicovskym sloupcem (aby vsechny tri zacinaly stejne).
+   Nepouzivame overflow:hidden, aby tooltipy mohly presahovat ven. */
+.sloupekAktualne { display: flow-root; margin: 8px auto; float: none; }
 .aktualne { background: /*url("../images/stavy.png")*/ no-repeat top left #E74C3C; margin: 0 0 5px 0; border: 0; height: 120px; color: white; line-height: 32px; width: 100%; border-radius:2px;}
 .aktua { color: white; font-size: 35px; line-height: 42px; vertical-align: center; }
 .aktualneMensi { background: /*url("../images/stavy.png")*/ no-repeat top center; font-size: 11px; margin: 2px 0 0 0; padding: 4px 0 4px 0; float: left; width: 49%; border: 0; height: 65px; color: white; line-height: 22px; border-radius:2px; }

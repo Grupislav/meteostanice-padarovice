@@ -35,10 +35,19 @@ $moonKey = function($phase) {
   return $k; // klíče v language/cz.php jsou ve stylu NEW_MOON, FULL_MOON, ...
 };
 
+// Počet dní od začátku měření (13. 11. 2024) – zobrazuje se v závorce u data
+$startDt = date_create('2024-11-13');
+$nowDt   = date_create();
+$dobaMereniDni = ($startDt && $nowDt) ? (int)$startDt->diff($nowDt)->days : null;
+
 // výstup
 echo "<table class='tabulkaVHlavicce'>
   <tr class='radek zelenyRadek'>
     <td colspan='2'>{$lang['info']}</td>
+  </tr>
+  <tr>
+    <td align='right'>{$lang['typstanice']}:</td>
+    <td>GoGEN ME 3900</td>
   </tr>
   <tr>
     <td align='right'>{$lang['umisteni']}:</td>
@@ -50,7 +59,7 @@ echo "<table class='tabulkaVHlavicce'>
   </tr>
   <tr>
     <td align='right'>{$lang['merenood']}:</td>
-    <td>13. 11. 2024</td>
+    <td>13. 11. 2024" . ($dobaMereniDni !== null ? " ({$dobaMereniDni} {$lang['dni']})" : '') . "</td>
   </tr>
 
   <tr class='radek zelenyRadekStredovy'>

@@ -1,7 +1,11 @@
 <?php
-// Defaulty z configu (jazyk = $l, jednotka = $u)
-if (!isset($_GET['ja'])) { $_GET['ja'] = $l; } // JA = jazyk
-if (!isset($_GET['je'])) { $_GET['je'] = $u; } // JE = jednotka
+// Defaulty z configu (jazyk = $l, jednotka teploty = $u, jednotka vetru = $uv, jednotka tlaku = $ut)
+if (!isset($uv)) { $uv = 'k'; } // fallback, kdyby chybelo v configu
+if (!isset($ut)) { $ut = 'h'; } // fallback, kdyby chybelo v configu
+if (!isset($_GET['ja'])) { $_GET['ja'] = $l; }  // JA = jazyk
+if (!isset($_GET['je'])) { $_GET['je'] = $u; }  // JE = jednotka teploty
+if (!isset($_GET['jv'])) { $_GET['jv'] = $uv; } // JV = jednotka vetru
+if (!isset($_GET['jt'])) { $_GET['jt'] = $ut; } // JT = jednotka tlaku
 
 // Jen CZ/EN
 $jazyky = [
@@ -9,10 +13,24 @@ $jazyky = [
     'en' => 'en',
 ];
 
-// Jednotky teploty (menu) — rozší?ení jen spolu s jednotkaTeploty() / grafy
+// Jednotky teploty (menu) - whitelist pro $u. Konverze v jednotkaTeploty() / jednotkaSymbol().
 $jednotky = [
     'C' => 'Celsius',
     'F' => 'Fahrenheit'
+];
+
+// Jednotky rychlosti vetru (menu) - data v DB jsou v km/h (Ecowitt wind_speed_unitid=7).
+// 'k' = km/h, 'm' = m/s. Konverze a popisky jsou v fce.php (jednotkaVitr/Symbol).
+$jednotkyVitr = [
+    'k' => 'km/h',
+    'm' => 'm/s',
+];
+
+// Jednotky tlaku (menu) - data v DB jsou v hPa (Ecowitt pressure_unitid=3).
+// 'h' = hPa, 'mm' = mmHg. Konverze a popisky jsou v fce.php (jednotkaTlak/Symbol).
+$jednotkyTlak = [
+    'h'  => 'hPa',
+    'mm' => 'mmHg',
 ];
 
 // Jazyk z URL (whitelist), jinak ponech default z configu
@@ -22,7 +40,7 @@ if (isset($_GET['ja'], $jazyky[$_GET['ja']])) {
     $_GET['ja'] = $l;
 }
 
-// Na?ti jazykový soubor bezpe?n?; fallback na 'cz'
+// Na?ti jazykovï¿½ soubor bezpe?n?; fallback na 'cz'
 $langFile = __DIR__ . "/language/{$l}.php";
 if (!is_file($langFile)) {
     $l = 'cz';
@@ -30,9 +48,23 @@ if (!is_file($langFile)) {
 }
 require_once $langFile;
 
-// Jednotka z URL (whitelist), jinak ponech default z configu
+// Jednotka teploty z URL (whitelist), jinak ponech default z configu
 if (isset($_GET['je'], $jednotky[$_GET['je']])) {
     $u = $_GET['je'];
 } else {
     $_GET['je'] = $u;
+}
+
+// Jednotka vetru z URL (whitelist), jinak ponech default z configu
+if (isset($_GET['jv'], $jednotkyVitr[$_GET['jv']])) {
+    $uv = $_GET['jv'];
+} else {
+    $_GET['jv'] = $uv;
+}
+
+// Jednotka tlaku z URL (whitelist), jinak ponech default z configu
+if (isset($_GET['jt'], $jednotkyTlak[$_GET['jt']])) {
+    $ut = $_GET['jt'];
+} else {
+    $_GET['jt'] = $ut;
 }

@@ -83,17 +83,17 @@ $box(' vpravo' . barvaRameckuTeploty($minrosnybod ?? 0), $lang['nejnizsirosnybod
 
 // tlak, vítr, srážky, vlhkost (jednotky zůstávají stejné)
 $box(barvaRameckuTlak($maxtlak ?? 0), $lang['nejvyssitlak'],
-  "<div class='aktuamens tooltip'>" . ($maxtlak !== null ? $maxtlak . " hPa" : "—") . "<span class='tooltiptext'>{$maxtlakdat}</span></div>"
+  "<div class='aktuamens tooltip'>" . jednotkaTlak($maxtlak, $ut, true) . "<span class='tooltiptext'>{$maxtlakdat}</span></div>"
 );
 $box(' vpravo' . barvaRameckuTlak($mintlak ?? 0), $lang['nejnizsitlak'],
-  "<div class='aktuamens tooltip'>" . ($mintlak !== null ? $mintlak . " hPa" : "—") . "<span class='tooltiptext'>{$mintlakdat}</span></div>"
+  "<div class='aktuamens tooltip'>" . jednotkaTlak($mintlak, $ut, true) . "<span class='tooltiptext'>{$mintlakdat}</span></div>"
 );
 
 $box(barvaRameckuVitr($maxvitr ?? 0), $lang['nejrychlejsivitr'],
-  "<div class='aktuamens tooltip'>" . ($maxvitr !== null ? $maxvitr . " km/h" : "—") . "<span class='tooltiptext'>{$maxvitrdat}</span></div>"
+  "<div class='aktuamens tooltip'>" . jednotkaVitr($maxvitr, $uv, true) . "<span class='tooltiptext'>{$maxvitrdat}</span></div>"
 );
 $box(' vpravo' . barvaRameckuVitr($maxnaraz ?? 0), $lang['nejprudsinaraz'],
-  "<div class='aktuamens tooltip'>" . ($maxnaraz !== null ? $maxnaraz . " km/h" : "—") . "<span class='tooltiptext'>{$maxnarazdat}</span></div>"
+  "<div class='aktuamens tooltip'>" . jednotkaVitr($maxnaraz, $uv, true) . "<span class='tooltiptext'>{$maxnarazdat}</span></div>"
 );
 
 $box(barvaRameckuVlhkost($minvlhkost ?? 0), $lang['nejnizsivlhkost'],

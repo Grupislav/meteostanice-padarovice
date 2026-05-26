@@ -6,7 +6,7 @@ require_once __DIR__ . "/../variableCheck.php";
 
 $TABLE = "history_cron_padarovice";
 
-// Den z GET (ovìøíme znovu)
+// Den z GET (ovï¿½ï¿½ï¿½me znovu)
 $den = isset($_GET['den']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['den'])
   ? $_GET['den']
   : date('Y-m-d', strtotime('-1 day'));
@@ -17,11 +17,11 @@ if (!$conn) { echo "Nejaky problem s DB: " . mysqli_connect_error(); return; }
 $denEsc = mysqli_real_escape_string($conn, $den);
 
 /**
- * Agregace do 10min bucketù:
+ * Agregace do 10min bucketï¿½:
  *  - bucket_time = 00:00, 00:10, 00:20, ...
- *  - teplota/pocteplota/… = AVG
- *  - srážky = MAX(rain_daily) - MIN(rain_daily) v bucketu (pøírùstek)
- * Pozn.: pokud nemáš rain_daily, bude potøeba pøepnout na SUM(precipitation) a odstranit delta.
+ *  - teplota/pocteplota/ï¿½ = AVG
+ *  - srï¿½ky = MAX(rain_daily) - MIN(rain_daily) v bucketu (pï¿½ï¿½rï¿½stek)
+ * Pozn.: pokud nemï¿½ rain_daily, bude potï¿½eba pï¿½epnout na SUM(precipitation) a odstranit delta.
  */
 $sql = "
 SELECT
@@ -46,7 +46,7 @@ if (!$res || mysqli_num_rows($res) <= 0) {
   return;
 }
 
-// Pøipravíme pole pro Highcharts
+// Pï¿½ipravï¿½me pole pro Highcharts
 $labels = $yT = $yApp = $yHum = $yDew = $yRain = $yPress = $yExpo = $yWind = [];
 
 while ($r = mysqli_fetch_assoc($res)) {
@@ -56,12 +56,14 @@ while ($r = mysqli_fetch_assoc($res)) {
   $yApp[]  = round(jednotkaTeploty((float)$r['avg_app'], $u, 0), 1);
   $yHum[]  = round((float)$r['avg_hum'], 1);
   $yDew[]  = round(jednotkaTeploty((float)$r['avg_dew'], $u, 0), 1);
-  $yRain[] = round(max(0, (float)$r['rain_inc']), 2); // jistota že delta nebude záporná
-  $yPress[]= round((float)$r['avg_press'], 1);
+  $yRain[] = round(max(0, (float)$r['rain_inc']), 2); // jistota ï¿½e delta nebude zï¿½pornï¿½
+  $yPress[]= round(((float)$r['avg_press']) * ($ut === 'mm' ? 0.750062 : 1), 1); // hPa â†’ ev. mmHg
   $yExpo[] = round((float)$r['avg_expo'], 1);
-  $yWind[] = round((float)$r['avg_wind'], 1);
+  $yWind[] = round(((float)$r['avg_wind']) * ($uv === 'm' ? 1/3.6 : 1), 1); // km/h â†’ ev. m/s
 }
 mysqli_close($conn);
+$jednotkaVit = jednotkaVitrSymbol($uv);
+$jednotkaTl  = jednotkaTlakSymbol($ut);
 ?>
 <script type="text/javascript">
   $(function () {
@@ -88,7 +90,7 @@ mysqli_close($conn);
           opposite: true
         }, {
           title: { text: null, style: {color: '#800000'} },
-          labels: { formatter: function(){ return this.value + ' hPa'; }, style: {color: '#800000'} },
+          labels: { formatter: function(){ return this.value + ' <?php echo $jednotkaTl; ?>'; }, style: {color: '#800000'} },
           opposite: true
         }, {
           title: { text: null, style: {color: '#999900'} },
@@ -96,7 +98,7 @@ mysqli_close($conn);
           opposite: true
         }, {
           title: { text: null, style: {color: '#3399ff'} },
-          labels: { formatter: function(){ return this.value + ' m/s'; }, style: {color: '#3399ff'} },
+          labels: { formatter: function(){ return this.value + ' <?php echo $jednotkaVit; ?>'; }, style: {color: '#3399ff'} },
           opposite: true
         }],
         tooltip: {
@@ -107,9 +109,9 @@ mysqli_close($conn);
               '<?php echo $lang['vlhkost'] ?>': '%',
               '<?php echo $lang['rosnybod'] ?>': '<?php echo "$jednotka"; ?>',
               '<?php echo $lang['srazky'] ?>': ' mm',
-              '<?php echo $lang['tlak'] ?>': ' hPa',
+              '<?php echo $lang['tlak'] ?>': ' <?php echo $jednotkaTl; ?>',
               '<?php echo $lang['osvit'] ?>': ' W',
-              '<?php echo $lang['vitr'] ?>': ' m/s'
+              '<?php echo $lang['vitr'] ?>': ' <?php echo $jednotkaVit; ?>'
             }[this.series.name];
             return '<b>' + this.x + '</b><br /><b>' + this.y + ' ' + unit + '</b>';
           },
@@ -143,7 +145,7 @@ mysqli_close($conn);
           name: '<?php echo $lang['srazky'] ?>',
           type: 'column', color: '#0066ff', yAxis: 2,
           data: [<?php echo implode(", ", $yRain); ?>],
-          marker: {enabled: false}<?php /* nechávám defaultnì viditelné = mùžeš dát visible:false */ ?>
+          marker: {enabled: false}<?php /* nechï¿½vï¿½m defaultnï¿½ viditelnï¿½ = mï¿½ï¿½eï¿½ dï¿½t visible:false */ ?>
         }, {
           name: '<?php echo $lang['tlak'] ?>',
           type: 'spline', color: '#800000', yAxis: 3,
