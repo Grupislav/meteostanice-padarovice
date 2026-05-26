@@ -15,8 +15,8 @@ $jazyky = [
 
 // Jednotky teploty (menu) - whitelist pro $u. Konverze v jednotkaTeploty() / jednotkaSymbol().
 $jednotky = [
-    'C' => 'Celsius',
-    'F' => 'Fahrenheit'
+    'C' => '°C',
+    'F' => '°F'
 ];
 
 // Jednotky rychlosti vetru (menu) - data v DB jsou v km/h (Ecowitt wind_speed_unitid=7).

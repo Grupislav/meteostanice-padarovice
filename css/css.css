@@ -79,9 +79,10 @@ nav ul > li > a { cursor: default; }
 
 /* okenko s aktualne */
 /* spolecny wrapper pro tri sloupce v hlavicce: BFC (flow-root) drzi floaty
-   a brani margin-collapse s rodicovskym sloupcem (aby vsechny tri zacinaly stejne).
-   Nepouzivame overflow:hidden, aby tooltipy mohly presahovat ven. */
-.sloupekAktualne { display: flow-root; margin: 8px auto; float: none; }
+   a nepouzivame overflow:hidden, aby tooltipy mohly presahovat ven.
+   Pro horni odsazeni pouzivame padding-top (margin by se mohl collapsovat
+   ruzne v jednotlivych sloupcich, padding je deterministicky). */
+.sloupekAktualne { display: flow-root; margin: 0 auto 8px; padding-top: 8px; float: none; }
 .aktualne { background: /*url("../images/stavy.png")*/ no-repeat top left #E74C3C; margin: 0 0 5px 0; border: 0; height: 120px; color: white; line-height: 32px; width: 100%; border-radius:2px;}
 .aktua { color: white; font-size: 35px; line-height: 42px; vertical-align: center; }
 .aktualneMensi { background: /*url("../images/stavy.png")*/ no-repeat top center; font-size: 11px; margin: 2px 0 0 0; padding: 4px 0 4px 0; float: left; width: 49%; border: 0; height: 65px; color: white; line-height: 22px; border-radius:2px; }

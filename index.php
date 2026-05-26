@@ -44,6 +44,17 @@ $htmlLang = $l === 'cz' ? 'cs' : ($l === 'en' ? 'en' : 'cs');
 <html lang="<?= e($htmlLang) ?>">
 <head>
   <meta charset="utf-8">
+  <script>
+    // Odsekneme hash z URL drive, nez prohlizec scrollne ke kotve panelu.
+    // Hodnotu si pamatujeme a po nactenni dome ji znovu nastavime pres replaceState
+    // (replaceState scroll netriggeruje), takze tab zustane otevreny a viewport se nepohne.
+    if (window.location.hash) {
+      window.__initialHash = window.location.hash;
+      try {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      } catch (e) {}
+    }
+  </script>
   <title><?= e($lang['titulekstranky'] ?? 'Meteostanice') ?></title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="canonical" href="<?= e($canonicalUrl) ?>">
@@ -148,8 +159,18 @@ $htmlLang = $l === 'cz' ? 'cs' : ($l === 'en' ? 'en' : 'cs');
       showTab(this.getAttribute('href'));
     });
 
-    // otevři podle hash, jinak #aktualne
-    showTab(location.hash || '#aktualne');
+    // Pri kliku na prepinac v menu (jazyk/jednotky) zachovame aktualni tab
+    // tak, ze do odkazu doplnime hash teprve tesne pred navigaci. Diky tomu
+    // server-side generovane odkazy zustavaji ciste a hash si bere aktualni hodnotu.
+    $('#menu a').on('click', function () {
+      var href = this.getAttribute('href');
+      if (!href || href === '#' || href.indexOf('#') !== -1) return;
+      var h = location.hash || (window.__initialHash || '#aktualne');
+      this.setAttribute('href', href + h);
+    });
+
+    // otevři podle hash, jinak #aktualne (preferuj hash zachyceny pred strip-em)
+    showTab(window.__initialHash || location.hash || '#aktualne');
 
     // Auto-refresh ajax části (interval z configu)
     var ajaxRefreshMs = <?= (int)($ajaxRefreshSec ?? 0) ?> * 1000;
