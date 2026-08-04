@@ -185,6 +185,32 @@ $lang['nejvyssiprumteplota']  = "Max. average temp.";
 $lang['nejnizsiprumteplota']  = "Min. average temp.";
 $lang['datum']           = "Date";
 $lang['velicina']        = "Variable";
+// absolute records (tiles)
+$lang['nejvyssidennimin']    = "Highest daily minimum:";
+$lang['nejnizsidennimax']    = "Lowest daily maximum:";
+$lang['maxuvi']              = "Maximum UV index:";
+$lang['maxintenzitasrazek']  = "Highest rain rate:";
+$lang['nejvyssiuhrnepizody'] = "Highest event rainfall:";
+$lang['nejvyssityuhrn']      = "Highest weekly rainfall:";
+$lang['nejvyssimuhrn']       = "Highest monthly rainfall:";
+$lang['nejvyssiruhrn']       = "Highest annual rainfall:";
+// further day and month rankings
+$lang['nejsilnejsinarazydny']  = "Days with strongest gusts";
+$lang['nejslunecnejsidny']     = "Sunniest days";
+$lang['nejvlhcidny']           = "Most humid days";
+$lang['nejsussidny']           = "Driest days";
+$lang['nejvyssimesicniminima'] = "Highest monthly minima";
+$lang['nejnizsimesicnimaxima'] = "Lowest monthly maxima";
+$lang['nejvetrnejsimesice']    = "Windiest months";
+$lang['nejslunecnejsimesice']  = "Sunniest months";
+// rows in the per-month overviews
+$lang['nejvyssiminimum'] = "Highest minimum";
+$lang['nejnizsimaximum'] = "Lowest maximum";
+// column headings
+$lang['prumosvit']   = "Avg. irradiance";
+$lang['prumvlhkost'] = "Avg. humidity";
+// notes
+$lang['jenuplnemesice'] = "Rankings only include fully measured months – the month in progress and the month when measurement started are left out.";
 
 // TMEP v3
 $lang['mesic1']  = "January";

@@ -179,6 +179,32 @@ $lang['nejvyssiprumteplota'] = "Max. prům. teplota";
 $lang['nejnizsiprumteplota'] = "Min. prům. teplota";
 $lang['datum'] = "Datum";
 $lang['velicina'] = "Veličina";
+// absolutní rekordy (dlaždice)
+$lang['nejvyssidennimin'] = "Nejvyšší denní minimum:";
+$lang['nejnizsidennimax'] = "Nejnižší denní maximum:";
+$lang['maxuvi'] = "Maximální UV index:";
+$lang['maxintenzitasrazek'] = "Nejvyšší intenzita srážek:";
+$lang['nejvyssiuhrnepizody'] = "Nejvyšší úhrn epizody:";
+$lang['nejvyssityuhrn'] = "Nejvyšší týdenní úhrn:";
+$lang['nejvyssimuhrn'] = "Nejvyšší měsíční úhrn:";
+$lang['nejvyssiruhrn'] = "Nejvyšší roční úhrn:";
+// další žebříčky dnů a měsíců
+$lang['nejsilnejsinarazydny'] = "Dny s nejsilnějšími nárazy";
+$lang['nejslunecnejsidny'] = "Nejslunečnější dny";
+$lang['nejvlhcidny'] = "Nejvlhčí dny";
+$lang['nejsussidny'] = "Nejsušší dny";
+$lang['nejvyssimesicniminima'] = "Nejvyšší měsíční minima";
+$lang['nejnizsimesicnimaxima'] = "Nejnižší měsíční maxima";
+$lang['nejvetrnejsimesice'] = "Největrnější měsíce";
+$lang['nejslunecnejsimesice'] = "Nejslunečnější měsíce";
+// řádky v měsíčních přehledech
+$lang['nejvyssiminimum'] = "Nejvyšší minimum";
+$lang['nejnizsimaximum'] = "Nejnižší maximum";
+// záhlaví sloupců
+$lang['prumosvit'] = "Prům. osvit";
+$lang['prumvlhkost'] = "Prům. vlhkost";
+// vysvětlivky
+$lang['jenuplnemesice'] = "Do žebříčků vstupují jen celé naměřené měsíce – probíhající měsíc a měsíc, ve kterém měření začalo, se nezapočítávají.";
 
 // TMEP v3
 $lang['mesic1'] = "Leden";

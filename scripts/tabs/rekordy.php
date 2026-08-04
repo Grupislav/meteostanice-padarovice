@@ -6,444 +6,348 @@ require_once __DIR__ . "/../variableCheck.php";
 
 $TABLE = "history_cron_padarovice";
 
-// ��� P�ep�na�: zobrazit horn� trojici �rekordy dne� (pokud u� je m� jinde, nastav false)
+// Přepínač: zobrazit horní trojici „rekordy pro dnešní datum"
 const SHOW_HEADLINE = true;
+
+// Kolik řádků mají žebříčky rekordů
+const TOP_N = 10;
 
 // Jedna DB connection
 $conn = mysqli_connect($dbServer, $dbUzivatel, $dbHeslo, $dbDb);
 if (!$conn) { echo "Nejaky problem s DB: " . mysqli_connect_error(); return; }
+mysqli_query($conn, "SET NAMES 'utf8mb4'");
 
-// ============== HLAVI�KA: REKORDY PRO DNE�N� DATUM (nap��� roky) ==============
-if (SHOW_HEADLINE) {
-  // nejni��� teplota v tento den (nap��� roky)
-  $sql = "
-    SELECT temperature, YEAR(date_time) AS rok
-    FROM {$TABLE}
-    WHERE DAY(date_time) = ".date("j")." AND MONTH(date_time) = ".date("n")."
-    ORDER BY temperature ASC
-    LIMIT 1";
-  $res = mysqli_query($conn, $sql);
-  if ($res && mysqli_num_rows($res) > 0) {
-    $t = mysqli_fetch_assoc($res);
-    $minteplota = (float)$t['temperature'];
-    $rokminteplota = (int)$t['rok'];
-  } else { $minteplota = null; $rokminteplota = null; }
-
-  // nejvy��� teplota v tento den (nap��� roky)
-  $sql = "
-    SELECT temperature, YEAR(date_time) AS rok
-    FROM {$TABLE}
-    WHERE DAY(date_time) = ".date("j")." AND MONTH(date_time) = ".date("n")."
-    ORDER BY temperature DESC
-    LIMIT 1";
-  $res = mysqli_query($conn, $sql);
-  if ($res && mysqli_num_rows($res) > 0) {
-    $t = mysqli_fetch_assoc($res);
-    $maxteplota = (float)$t['temperature'];
-    $rokmaxteplota = (int)$t['rok'];
-  } else { $maxteplota = null; $rokmaxteplota = null; }
-
-  // nejvy��� denn� sr�ky v tento den (nap��� roky) � z kumulativy bereme MAX(rain_daily) po dni
-  $sql = "
-    SELECT YEAR(d) AS rok, MAX(max_rain_daily) AS srazky
-    FROM (
-      SELECT DATE(date_time) AS d, MAX(rain_daily) AS max_rain_daily
-      FROM {$TABLE}
-      WHERE DAY(date_time) = ".date("j")." AND MONTH(date_time) = ".date("n")."
-      GROUP BY DATE(date_time)
-    ) x
-    GROUP BY YEAR(d)
-    ORDER BY srazky DESC
-    LIMIT 1";
-  $res = mysqli_query($conn, $sql);
-  if ($res && mysqli_num_rows($res) > 0) {
-    $t = mysqli_fetch_assoc($res);
-    $maxsrazky = round((float)$t['srazky'], 1);
-    $rokmaxsrazky = (int)$t['rok'];
-  } else { $maxsrazky = null; $rokmaxsrazky = null; }
-
-  echo "<table class='tabulkaDnes'>
-          <tr><td class='radekDnes'>
-            <span class='font25 zelena'>".mb_strtoupper($lang['rekordydatum'],'UTF-8')."</span>
-          </td></tr>
-        </table>
-
-        <div class='container'><div class='row' style='width:98%;'>";
-
-  // boxy (render jen kdy� m�me data)
-  if ($maxteplota !== null) {
-    echo "<div class='col-md-4 trisloupce'>
-      <div class='aktualnetretinka".barvaRameckuTeploty($maxteplota)."'>
-        <div class='aktualneOdskok'>
-          {$lang['nejvyssiteplota']}<br>
-          <font class='aktuamens'>".jednotkaTeploty($maxteplota,$u,1)." ({$rokmaxteplota})</font>
-        </div>
-      </div>
-    </div>";
-  }
-
-  if ($minteplota !== null) {
-    echo "<div class='col-md-4 trisloupce'>
-      <div class='aktualnetretinka".barvaRameckuTeploty($minteplota)."'>
-        <div class='aktualneOdskok'>
-          {$lang['nejnizsiteplota']}<br>
-          <font class='aktuamens'>".jednotkaTeploty($minteplota,$u,1)." ({$rokminteplota})</font>
-        </div>
-      </div>
-    </div>";
-  }
-
-  if ($maxsrazky !== null) {
-    echo "<div class='col-md-4 trisloupce'>
-      <div class='aktualnetretinka".barvaRameckuSrazky($maxsrazky)."'>
-        <div class='aktualneOdskok'>
-          {$lang['nejvyssiuhrn']}<br>
-          <span class='aktuamens'>{$maxsrazky} mm ({$rokmaxsrazky})</span>
-        </div>
-      </div>
-    </div>";
-  }
-
-  echo "</div></div>";
+/* ------------------------------------------------------------------
+   Denní agregát – jediný průchod tabulkou. Všechny sekce níž (absolutní
+   rekordy, rekordy dle dnů i měsíční přehledy) se počítají až v PHP nad
+   tímhle polem, takže se historie nečte stokrát dokola.
+   ------------------------------------------------------------------ */
+$sql = "
+  SELECT DATE(date_time)            AS d,
+         MIN(temperature)           AS t_min,
+         MAX(temperature)           AS t_max,
+         MIN(temperature_apparent)  AS a_min,
+         MAX(temperature_apparent)  AS a_max,
+         MAX(dew_point)             AS dp_max,
+         MIN(NULLIF(humidity,0))    AS h_min,
+         AVG(NULLIF(humidity,0))    AS h_avg,
+         MIN(NULLIF(pressure_QNH,0)) AS p_min,
+         MAX(pressure_QNH)          AS p_max,
+         AVG(wind_speed)            AS w_avg,
+         MAX(wind_speed)            AS w_max,
+         MAX(wind_gust)             AS g_max,
+         MAX(exposure)              AS e_max,
+         AVG(exposure)              AS e_avg,
+         MAX(uvi)                   AS uvi_max,
+         MAX(rain_rate)             AS rr_max,
+         MAX(rain_daily)            AS rd_max,
+         MAX(rain_event)            AS re_max,
+         MAX(rain_weekly)           AS rw_max,
+         MAX(rain_monthly)          AS rm_max,
+         MAX(rain_yearly)           AS ry_max
+  FROM {$TABLE}
+  GROUP BY DATE(date_time)";
+$dny = [];
+if ($res = mysqli_query($conn, $sql)) {
+  while ($r = mysqli_fetch_assoc($res)) { $dny[] = $r; }
 }
 
-// ============== REKORDY DLE DN� ==============
-echo "<table class='tabulkaDnes'>
-        <tr><td class='radekDnes'>
-          <span class='font25 zelena'><br>".mb_strtoupper($lang['rekordydlednu'],'UTF-8')."</span>
-        </td></tr>
-      </table>";
+/* Měsíční agregát – průměry se počítají ze všech měření v měsíci, ne
+   z průměrů dní (dny mají různý počet vzorků). */
+$sql = "
+  SELECT DATE_FORMAT(date_time,'%Y-%m-01') AS ym,
+         AVG(temperature)   AS t_avg,
+         MIN(temperature)   AS t_min,
+         MAX(temperature)   AS t_max,
+         MAX(rain_monthly)  AS rain,
+         AVG(wind_speed)    AS w_avg,
+         AVG(exposure)      AS e_avg
+  FROM {$TABLE}
+  GROUP BY YEAR(date_time), MONTH(date_time)";
+$mesice = [];
+if ($res = mysqli_query($conn, $sql)) {
+  while ($r = mysqli_fetch_assoc($res)) { $mesice[] = $r; }
+}
+
+mysqli_close($conn);
+
+if (!$dny) { echo "<p>" . e($lang['err_ajax_nodata']) . "</p>"; return; }
+
+/* ================= pomocné funkce nad agregáty ================= */
+
+/** TOP N řádků setříděných podle jednoho klíče; řádky bez hodnoty vynechá. */
+function topN(array $rows, string $key, string $order = 'DESC', int $limit = TOP_N): array {
+  $out = array_values(array_filter($rows, fn($r) => isset($r[$key]) && $r[$key] !== null && $r[$key] !== ''));
+  usort($out, fn($x, $y) => $order === 'ASC'
+    ? (float)$x[$key] <=> (float)$y[$key]
+    : (float)$y[$key] <=> (float)$x[$key]);
+  return array_slice($out, 0, $limit);
+}
+
+/** Jediný extrémní řádek podle klíče (nebo null, když data chybí). */
+function extrem(array $rows, string $key, string $order = 'DESC'): ?array {
+  return topN($rows, $key, $order, 1)[0] ?? null;
+}
+
+/** Řádky denního agregátu spadající do zadaného měsíce (1–12). */
+function dnyMesice(array $dny, int $m): array {
+  return array_values(array_filter($dny, fn($r) => (int)substr((string)$r['d'], 5, 2) === $m));
+}
+
+/** Řádky měsíčního agregátu pro zadaný měsíc (1–12) napříč roky. */
+function mesiceMesice(array $mesice, int $m): array {
+  return array_values(array_filter($mesice, fn($r) => (int)substr((string)$r['ym'], 5, 2) === $m));
+}
 
 /**
- * Helper pro tabulky rekord� (dvousloupcov� tabulka s datem a hodnotou)
+ * Nechá jen měsíce, které máme naměřené celé. Rozběhnutý měsíc a měsíc,
+ * ve kterém měření teprve začalo, jinak zákonitě vyhrávají žebříčky
+ * „nejsušší / min. úhrn" a kazí i průměrné teploty.
+ *
+ * Nekoukáme na počet dní (výpadek cronu uprostřed měsíce nevadí – měsíční
+ * úhrn čteme z kumulativního počitadla rain_monthly), ale na to, jestli
+ * máme měření na začátku i na konci měsíce.
  */
-function renderRekordTable($title, $headRight, $rows, $valueFormatter) {
-  echo "<table class='rekordyctvrtina'>
-          <tr class='zelenyRadek'><td colspan='2' class='radek'>{$title}</td></tr>
-          <tr class='modryRadek'>
-            <td class='radek'>".e($GLOBALS['lang']['den'])."</td>
-            <td class='radek'>".$headRight."</td>
-          </tr>";
-  foreach ($rows as $r) {
-    echo "<tr><td>".formatDnu($r['d'])."</td><td>".$valueFormatter($r['v'])."</td></tr>";
+function uplneMesice(array $mesice, array $dny, int $okraj = 2): array {
+  $pokryti = [];
+  foreach ($dny as $r) {
+    $pokryti[substr((string)$r['d'], 0, 7)][(int)substr((string)$r['d'], 8, 2)] = true;
   }
-  echo "</table>";
+
+  $bezici = date('Y-m');
+
+  return array_values(array_filter($mesice, function ($r) use ($pokryti, $bezici, $okraj) {
+    $ym = substr((string)$r['ym'], 0, 7);
+    if ($ym >= $bezici) return false;               // rozběhnutý (a teoreticky budoucí) měsíc
+
+    $dnyMes = $pokryti[$ym] ?? [];
+    if (!$dnyMes) return false;
+    $pocetDnu = (int)date('t', strtotime((string)$r['ym']));
+
+    $zacatek = false;
+    for ($d = 1; $d <= $okraj; $d++) { if (isset($dnyMes[$d])) { $zacatek = true; break; } }
+
+    $konec = false;
+    for ($d = $pocetDnu; $d > $pocetDnu - $okraj; $d--) { if (isset($dnyMes[$d])) { $konec = true; break; } }
+
+    return $zacatek && $konec;
+  }));
 }
 
-// 1) Nej-teplej�� dny (MAX teploty po dnech, TOP 10)
-$sql = "
-  SELECT d, MAX_t AS v FROM (
-    SELECT DATE(date_time) AS d, MAX(temperature) AS MAX_t
-    FROM {$TABLE}
-    GROUP BY DATE(date_time)
-  ) z
-  ORDER BY v DESC
-  LIMIT 10";
-$res = mysqli_query($conn,$sql);
-$rows = [];
-while($res && $r=mysqli_fetch_assoc($res)) { $rows[]=['d'=>$r['d'],'v'=>(float)$r['v']]; }
-renderRekordTable($lang['nejteplejsidny'], $lang['teplota'], $rows, fn($v)=>jednotkaTeploty($v,$GLOBALS['u'],1));
+// Žebříčky i měsíční přehledy počítáme jen z kompletních měsíců. Fallback na
+// všechna data je tu proto, aby stránka nebyla prázdná hned po spuštění stanice.
+$mesiceUplne = uplneMesice($mesice, $dny) ?: $mesice;
 
-// 2) Nej-chladn�j�� dny (MIN teploty po dnech, TOP 10)
-$sql = "
-  SELECT d, MIN_t AS v FROM (
-    SELECT DATE(date_time) AS d, MIN(temperature) AS MIN_t
-    FROM {$TABLE}
-    GROUP BY DATE(date_time)
-  ) z
-  ORDER BY v ASC
-  LIMIT 10";
-$res = mysqli_query($conn,$sql);
-$rows = [];
-while($res && $r=mysqli_fetch_assoc($res)) { $rows[]=['d'=>$r['d'],'v'=>(float)$r['v']]; }
-renderRekordTable($lang['nejchladnejsidny'], $lang['teplota'], $rows, fn($v)=>jednotkaTeploty($v,$GLOBALS['u'],1));
+/* ================= formátovače hodnot ================= */
 
-// 3) Nejni��� denn� maxima (MAX teploty po dnech, set��d�no vzestupn�)
-$sql = "
-  SELECT d, MAX_t AS v FROM (
-    SELECT DATE(date_time) AS d, MAX(temperature) AS MAX_t
-    FROM {$TABLE}
-    GROUP BY DATE(date_time)
-  ) z
-  ORDER BY v ASC
-  LIMIT 10";
-$res = mysqli_query($conn,$sql);
-$rows = [];
-while($res && $r=mysqli_fetch_assoc($res)) { $rows[]=['d'=>$r['d'],'v'=>(float)$r['v']]; }
-renderRekordTable($lang['nejnizsimaxima'], $lang['teplota'], $rows, fn($v)=>jednotkaTeploty($v,$GLOBALS['u'],1));
+$fmtTeplota = fn($v) => jednotkaTeploty(round((float)$v, 1), $u, 1);
+$fmtVitr    = fn($v) => jednotkaVitr((float)$v, $uv, true);
+$fmtTlak    = fn($v) => jednotkaTlak((float)$v, $ut, true);
+$fmtMm      = fn($v) => round((float)$v, 1) . " mm";
+$fmtMmH     = fn($v) => round((float)$v, 1) . " mm/h";
+$fmtProcent = fn($v) => round((float)$v) . " %";
+$fmtOsvit   = fn($v) => round((float)$v) . " W/m<sup>2</sup>";
+$fmtUvi     = fn($v) => (string)round((float)$v, 1);
 
-// 4) Nejvy��� denn� minima (MIN teploty po dnech, set��d�no sestupn�)
-$sql = "
-  SELECT d, MIN_t AS v FROM (
-    SELECT DATE(date_time) AS d, MIN(temperature) AS MIN_t
-    FROM {$TABLE}
-    GROUP BY DATE(date_time)
-  ) z
-  ORDER BY v DESC
-  LIMIT 10";
-$res = mysqli_query($conn,$sql);
-$rows = [];
-while($res && $r=mysqli_fetch_assoc($res)) { $rows[]=['d'=>$r['d'],'v'=>(float)$r['v']]; }
-renderRekordTable($lang['nejvyssiminima'], $lang['teplota'], $rows, fn($v)=>jednotkaTeploty($v,$GLOBALS['u'],1));
+/* ================= renderovací pomocníci ================= */
 
-// 5) Pocitov� nej-teplej�� dny (MAX apparent po dnech)
-$sql = "
-  SELECT d, v FROM (
-    SELECT DATE(date_time) AS d, MAX(temperature_apparent) AS v
-    FROM {$TABLE}
-    GROUP BY DATE(date_time)
-  ) z
-  ORDER BY v DESC
-  LIMIT 10";
-$res = mysqli_query($conn,$sql);
-$rows = [];
-while($res && $r=mysqli_fetch_assoc($res)) { $rows[]=['d'=>$r['d'],'v'=>(float)$r['v']]; }
-renderRekordTable($lang['pocnejteplejsidny'], $lang['teplota'], $rows, fn($v)=>jednotkaTeploty($v,$GLOBALS['u'],1));
+$nadpis = function (string $text) {
+  echo "<table class='tabulkaDnes'>
+          <tr><td class='radekDnes'>
+            <span class='font25 zelena'>" . mb_strtoupper($text, 'UTF-8') . "</span>
+          </td></tr>
+        </table>";
+};
 
-// 6) Pocitov� nej-chladn�j�� dny (MIN apparent po dnech)
-$sql = "
-  SELECT d, v FROM (
-    SELECT DATE(date_time) AS d, MIN(temperature_apparent) AS v
-    FROM {$TABLE}
-    GROUP BY DATE(date_time)
-  ) z
-  ORDER BY v ASC
-  LIMIT 10";
-$res = mysqli_query($conn,$sql);
-$rows = [];
-while($res && $r=mysqli_fetch_assoc($res)) { $rows[]=['d'=>$r['d'],'v'=>(float)$r['v']]; }
-renderRekordTable($lang['pocnejchladnejsidny'], $lang['teplota'], $rows, fn($v)=>jednotkaTeploty($v,$GLOBALS['u'],1));
+/** Jedna dlaždice absolutního rekordu (popis / hodnota / datum). */
+$dlazdice = function (string $barva, string $popis, string $hodnota, string $datum) {
+  echo "<div class='dlazdice{$barva}'>
+          <div class='dl-popis'>" . rtrim($popis, ':') . "</div>
+          <div class='dl-hodnota'>{$hodnota}</div>
+          <div class='dl-datum'>{$datum}</div>
+        </div>";
+};
 
-// 7) Nejde�tiv�j�� dny � z kumulativy denn�ho �hrnu (MAX(rain_daily) po dnech)
-$sql = "
-  SELECT d, v FROM (
-    SELECT DATE(date_time) AS d, MAX(rain_daily) AS v
-    FROM {$TABLE}
-    GROUP BY DATE(date_time)
-  ) z
-  ORDER BY v DESC
-  LIMIT 10";
-$res = mysqli_query($conn,$sql);
-$rows = [];
-while($res && $r=mysqli_fetch_assoc($res)) { $rows[]=['d'=>$r['d'],'v'=>round((float)$r['v'],1)]; }
-renderRekordTable($lang['nejdestivejsidny'], $lang['srazky'], $rows, fn($v)=>$v." mm");
-
-// 8) Nejv�trn�j�� dny � pr�m�rn� rychlost v�tru po dnech
-$sql = "
-  SELECT d, v FROM (
-    SELECT DATE(date_time) AS d, AVG(wind_speed) AS v
-    FROM {$TABLE}
-    GROUP BY DATE(date_time)
-  ) z
-  ORDER BY v DESC
-  LIMIT 10";
-$res = mysqli_query($conn,$sql);
-$rows = [];
-while($res && $r=mysqli_fetch_assoc($res)) { $rows[]=['d'=>$r['d'],'v'=>round((float)$r['v'],1)]; }
-renderRekordTable($lang['nejvetrnejsidny'], $lang['prumvitr'], $rows, fn($v)=>jednotkaVitr($v, $uv, true));
-
-// ============== REKORDY DLE M�S�C� ==============
-echo "<table class='tabulkaDnes'>
-        <tr><td class='radekDnes'>
-          <span class='font25 zelena'><br>".mb_strtoupper($lang['rekordydlemesicu'],'UTF-8')."</span>
-        </td></tr>
-      </table>";
-
-function renderRekordTableMesic($title, $headRight, $rows) {
-  echo "<table class='rekordyctvrtina'>
+/** Dvousloupcová tabulka žebříčku. */
+$tabulka = function (string $title, string $headLeft, string $headRight, array $rows, callable $left, callable $right) {
+  echo "<table>
           <tr class='zelenyRadek'><td colspan='2' class='radek'>{$title}</td></tr>
           <tr class='modryRadek'>
-            <td class='radek'>".e($GLOBALS['lang']['mesic'])."</td>
+            <td class='radek'>{$headLeft}</td>
             <td class='radek'>{$headRight}</td>
           </tr>";
   foreach ($rows as $r) {
-    echo "<tr><td>".substr($r['ym'],0,7)."</td><td>{$r['val']}</td></tr>";
+    echo "<tr><td>" . $left($r) . "</td><td>" . $right($r) . "</td></tr>";
   }
   echo "</table>";
+};
+
+/** Žebříček nad denním agregátem. */
+$tabDny = function (string $title, string $key, string $order, string $head, callable $fmt)
+  use ($dny, $tabulka, $lang) {
+    $tabulka($title, $lang['den'], $head, topN($dny, $key, $order, TOP_N),
+      fn($r) => formatDnu($r['d']),
+      fn($r) => $fmt($r[$key]));
+  };
+
+/** Žebříček nad měsíčním agregátem (jen kompletní měsíce). */
+$tabMesice = function (string $title, string $key, string $order, string $head, callable $fmt)
+  use ($mesiceUplne, $tabulka, $lang) {
+    $tabulka($title, $lang['mesic'], $head, topN($mesiceUplne, $key, $order, TOP_N),
+      fn($r) => substr((string)$r['ym'], 0, 7),
+      fn($r) => $fmt($r[$key]));
+  };
+
+/* ============== HLAVIČKA: REKORDY PRO DNEŠNÍ DATUM (napříč roky) ============== */
+if (SHOW_HEADLINE) {
+  $dnesniDen = date('n-j');
+  $dnesek = array_values(array_filter($dny, function ($r) use ($dnesniDen) {
+    $ts = strtotime((string)$r['d']);
+    return $ts !== false && date('n-j', $ts) === $dnesniDen;
+  }));
+
+  if ($dnesek) {
+    $nadpis($lang['rekordydatum']);
+    echo "<div class='rekordy-tridlazdice'>";
+
+    foreach ([
+      ['t_max',  'DESC', $lang['nejvyssiteplota'], $fmtTeplota, 'barvaRameckuTeploty'],
+      ['t_min',  'ASC',  $lang['nejnizsiteplota'], $fmtTeplota, 'barvaRameckuTeploty'],
+      ['rd_max', 'DESC', $lang['nejvyssiuhrn'],    $fmtMm,      'barvaRameckuSrazky'],
+    ] as [$key, $order, $popis, $fmt, $barva]) {
+      $r = extrem($dnesek, $key, $order);
+      if (!$r) continue;
+      $v = (float)$r[$key];
+      $dlazdice($barva($v), $popis, $fmt($v), date('Y', strtotime((string)$r['d'])));
+    }
+
+    echo "</div>";
+  }
 }
 
-// Nej-teplej�� m�s�ce (AVG teploty po m�s�c�ch, top 10)
-$sql = "
-  SELECT ym, ROUND(avg_t,1) AS v FROM (
-    SELECT DATE_FORMAT(date_time,'%Y-%m-01') AS ym, AVG(temperature) AS avg_t
-    FROM {$TABLE}
-    GROUP BY YEAR(date_time), MONTH(date_time)
-  ) z
-  ORDER BY v DESC
-  LIMIT 10";
-$res = mysqli_query($conn,$sql);
-$rows = [];
-while($res && $r=mysqli_fetch_assoc($res)) {
-  $rows[] = ['ym'=>$r['v']? $r['ym']:$r['ym'], 'val'=>jednotkaTeploty((float)$r['v'],$u,1)];
+/* ============== ABSOLUTNÍ REKORDY (20 dlaždic = 5 / 4 / 2 ve sloupci) ============== */
+$nadpis($lang['absolutnirekordy']);
+echo "<div class='rekordy-dlazdice'>";
+
+/* [klíč denního agregátu, řazení, popisek, formátovač hodnoty, barvicí funkce, formát data]
+   Formát data: 'den' = j. n. Y, 'mesic' = n. Y, 'rok' = Y (u kumulativních
+   srážkových počitadel dává smysl ukazovat jen období, ne přesný den). */
+$absRekordy = [
+  ['t_max',   'DESC', $lang['nejvyssiteplota'],       $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+  ['t_min',   'ASC',  $lang['nejnizsiteplota'],       $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+  ['t_min',   'DESC', $lang['nejvyssidennimin'],      $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+  ['t_max',   'ASC',  $lang['nejnizsidennimax'],      $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+  ['a_max',   'DESC', $lang['nejvyssipocteplota'],    $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+
+  ['a_min',   'ASC',  $lang['nejnizsipocteplota'],    $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+  ['dp_max',  'DESC', $lang['nejvyssirosnybod'],      $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+  ['h_min',   'ASC',  $lang['nejnizsivlhkost'],       $fmtProcent, 'barvaRameckuVlhkost',     'den'],
+  ['p_max',   'DESC', $lang['nejvyssitlak'],          $fmtTlak,    'barvaRameckuTlak',        'den'],
+  ['p_min',   'ASC',  $lang['nejnizsitlak'],          $fmtTlak,    'barvaRameckuTlak',        'den'],
+
+  ['w_max',   'DESC', $lang['nejrychlejsivitr'],      $fmtVitr,    'barvaRameckuVitr',        'den'],
+  ['g_max',   'DESC', $lang['nejprudsinaraz'],        $fmtVitr,    'barvaRameckuVitr',        'den'],
+  ['e_max',   'DESC', $lang['maxosvit'],              $fmtOsvit,   'barvaRameckuOsvit',       'den'],
+  ['uvi_max', 'DESC', $lang['maxuvi'],                $fmtUvi,     'barvaRameckuUV',          'den'],
+  ['rr_max',  'DESC', $lang['maxintenzitasrazek'],    $fmtMmH,     'barvaRameckuSrazky',      'den'],
+
+  ['rd_max',  'DESC', $lang['nejvyssiuhrn'],          $fmtMm,      'barvaRameckuSrazky',      'den'],
+  ['re_max',  'DESC', $lang['nejvyssiuhrnepizody'],   $fmtMm,      'barvaRameckuSrazky',      'den'],
+  ['rw_max',  'DESC', $lang['nejvyssityuhrn'],        $fmtMm,      'barvaRameckuSrazkyMesic', 'den'],
+  ['rm_max',  'DESC', $lang['nejvyssimuhrn'],         $fmtMm,      'barvaRameckuSrazkyMesic', 'mesic'],
+  ['ry_max',  'DESC', $lang['nejvyssiruhrn'],         $fmtMm,      'barvaRameckuSrazkyRok',   'rok'],
+];
+
+foreach ($absRekordy as [$key, $order, $popis, $fmt, $barva, $format]) {
+  $r = extrem($dny, $key, $order);
+  if (!$r) { echo "<div class='dlazdice'><div class='dl-popis'>" . rtrim($popis, ':') . "</div><div class='dl-hodnota'>&mdash;</div><div class='dl-datum'>&nbsp;</div></div>"; continue; }
+
+  $v  = (float)$r[$key];
+  $ts = strtotime((string)$r['d']);
+  $datum = $format === 'rok'   ? date('Y', $ts)
+         : ($format === 'mesic' ? date('n. Y', $ts) : formatDnu($r['d']));
+
+  $dlazdice($barva($v), $popis, $fmt($v), $datum);
 }
-renderRekordTableMesic($lang['nejteplejsimesice'], $lang['prumteplota'], $rows);
 
-// Nej-chladn�j�� m�s�ce
-$sql = "
-  SELECT ym, ROUND(avg_t,1) AS v FROM (
-    SELECT DATE_FORMAT(date_time,'%Y-%m-01') AS ym, AVG(temperature) AS avg_t
-    FROM {$TABLE}
-    GROUP BY YEAR(date_time), MONTH(date_time)
-  ) z
-  ORDER BY v ASC
-  LIMIT 10";
-$res = mysqli_query($conn,$sql);
-$rows = [];
-while($res && $r=mysqli_fetch_assoc($res)) {
-  $rows[] = ['ym'=>$r['ym'], 'val'=>jednotkaTeploty((float)$r['v'],$u,1)];
-}
-renderRekordTableMesic($lang['nejchladnejsimesice'], $lang['prumteplota'], $rows);
+echo "</div>";
 
-// Nejde�tiv�j�� m�s�ce � z kumulativy m�s��n�ho �hrnu (MAX(rain_monthly) po m�s�c�ch)
-$sql = "
-  SELECT ym, v FROM (
-    SELECT DATE_FORMAT(date_time,'%Y-%m-01') AS ym, MAX(rain_monthly) AS v
-    FROM {$TABLE}
-    GROUP BY YEAR(date_time), MONTH(date_time)
-  ) z
-  ORDER BY v DESC
-  LIMIT 10";
-$res = mysqli_query($conn,$sql);
-$rows = [];
-while($res && $r=mysqli_fetch_assoc($res)) { $rows[] = ['ym'=>$r['ym'], 'val'=>round((float)$r['v'],1)." mm"]; }
-renderRekordTableMesic($lang['nejdestivejsimesice'], $lang['srazky'], $rows);
+/* ============== REKORDY DLE DNŮ (12 tabulek = 4 / 2 / 1 ve sloupci) ============== */
+$nadpis($lang['rekordydlednu']);
+echo "<div class='rekordy-grid'>";
 
-// Nejsu��� m�s�ce
-$sql = "
-  SELECT ym, v FROM (
-    SELECT DATE_FORMAT(date_time,'%Y-%m-01') AS ym, MAX(rain_monthly) AS v
-    FROM {$TABLE}
-    GROUP BY YEAR(date_time), MONTH(date_time)
-  ) z
-  ORDER BY v ASC
-  LIMIT 10";
-$res = mysqli_query($conn,$sql);
-$rows = [];
-while($res && $r=mysqli_fetch_assoc($res)) { $rows[] = ['ym'=>$r['ym'], 'val'=>round((float)$r['v'],1)." mm"]; }
-renderRekordTableMesic($lang['nejsussimesice'], $lang['srazky'], $rows);
+$tabDny($lang['nejteplejsidny'],        't_max', 'DESC', $lang['teplota'],     $fmtTeplota);
+$tabDny($lang['nejchladnejsidny'],      't_min', 'ASC',  $lang['teplota'],     $fmtTeplota);
+$tabDny($lang['nejnizsimaxima'],        't_max', 'ASC',  $lang['teplota'],     $fmtTeplota);
+$tabDny($lang['nejvyssiminima'],        't_min', 'DESC', $lang['teplota'],     $fmtTeplota);
+$tabDny($lang['pocnejteplejsidny'],     'a_max', 'DESC', $lang['teplota'],     $fmtTeplota);
+$tabDny($lang['pocnejchladnejsidny'],   'a_min', 'ASC',  $lang['teplota'],     $fmtTeplota);
+$tabDny($lang['nejdestivejsidny'],      'rd_max','DESC', $lang['srazky'],      $fmtMm);
+$tabDny($lang['nejvetrnejsidny'],       'w_avg', 'DESC', $lang['prumvitr'],    $fmtVitr);
+$tabDny($lang['nejsilnejsinarazydny'],  'g_max', 'DESC', $lang['vitrnaraz'],   $fmtVitr);
+$tabDny($lang['nejslunecnejsidny'],     'e_avg', 'DESC', $lang['prumosvit'],   $fmtOsvit);
+$tabDny($lang['nejvlhcidny'],           'h_avg', 'DESC', $lang['prumvlhkost'], $fmtProcent);
+$tabDny($lang['nejsussidny'],           'h_avg', 'ASC',  $lang['prumvlhkost'], $fmtProcent);
 
-// ============== M�S��N� P�EHLEDY (1�12) ==============
-$i = 1;
-while ($i <= 12) {
-  $aktmesic = "mesic".$i;
+echo "</div>";
 
-  echo "<table class='rekordytretina'>
-          <tr class='zelenyRadek'><td colspan='2' class='radek'>{$lang[$aktmesic]}</td></tr>
+/* ============== REKORDY DLE MĚSÍCŮ (8 tabulek = 4 / 2 / 1 ve sloupci) ============== */
+$nadpis($lang['rekordydlemesicu']);
+echo "<p class='poznamka'>" . e($lang['jenuplnemesice']) . "</p>";
+echo "<div class='rekordy-grid'>";
+
+$tabMesice($lang['nejteplejsimesice'],       't_avg', 'DESC', $lang['prumteplota'], $fmtTeplota);
+$tabMesice($lang['nejchladnejsimesice'],     't_avg', 'ASC',  $lang['prumteplota'], $fmtTeplota);
+$tabMesice($lang['nejvyssimesicniminima'],   't_min', 'DESC', $lang['minteplota'],  $fmtTeplota);
+$tabMesice($lang['nejnizsimesicnimaxima'],   't_max', 'ASC',  $lang['maxteplota'],  $fmtTeplota);
+$tabMesice($lang['nejdestivejsimesice'],     'rain',  'DESC', $lang['srazky'],      $fmtMm);
+$tabMesice($lang['nejsussimesice'],          'rain',  'ASC',  $lang['srazky'],      $fmtMm);
+$tabMesice($lang['nejvetrnejsimesice'],      'w_avg', 'DESC', $lang['prumvitr'],    $fmtVitr);
+$tabMesice($lang['nejslunecnejsimesice'],    'e_avg', 'DESC', $lang['prumosvit'],   $fmtOsvit);
+
+echo "</div>";
+
+/* ============== MĚSÍČNÍ PŘEHLEDY (1–12, 3 / 2 / 1 ve sloupci) ============== */
+echo "<div class='rekordy-grid rekordy-grid--tretiny'>";
+
+for ($i = 1; $i <= 12; $i++) {
+  $dnyM = dnyMesice($dny, $i);
+  $mesM = mesiceMesice($mesiceUplne, $i);
+  $nazevMesice = $lang["mesic{$i}"] ?? (string)$i;
+
+  echo "<table>
+          <tr class='zelenyRadek'><td colspan='2' class='radek'>{$nazevMesice}</td></tr>
           <tr class='modryRadek'>
             <td class='radek'>{$lang['velicina']}</td>
             <td class='radek'>{$lang['datum']}</td>
           </tr>";
 
-  // Nejvy��� teplota v m�s�ci (po dnech)
-  $sql = "
-    SELECT d, v FROM (
-      SELECT DATE(date_time) AS d, MAX(temperature) AS v
-      FROM {$TABLE}
-      WHERE MONTH(date_time) = {$i}
-      GROUP BY DATE(date_time)
-    ) z
-    ORDER BY v DESC
-    LIMIT 1";
-  $res = mysqli_query($conn,$sql);
-  if ($res && $r=mysqli_fetch_assoc($res)) {
-    echo "<tr><td>{$lang['maxteplota']}</td>
-          <td>".jednotkaTeploty((float)$r['v'],$u,1)." (".formatDnu($r['d']).")</td></tr>";
+  // rekordy odvozené z jednotlivých dní – ukazujeme konkrétní datum
+  foreach ([
+    ['t_max',  'DESC', $lang['maxteplota'],           $fmtTeplota],
+    ['t_min',  'ASC',  $lang['minteplota'],           $fmtTeplota],
+    ['t_min',  'DESC', $lang['nejvyssiminimum'],      $fmtTeplota],
+    ['t_max',  'ASC',  $lang['nejnizsimaximum'],      $fmtTeplota],
+    ['rd_max', 'DESC', $lang['nejvyssidennisrazky'],  $fmtMm],
+  ] as [$key, $order, $popis, $fmt]) {
+    $r = extrem($dnyM, $key, $order);
+    if (!$r) continue;
+    echo "<tr><td>{$popis}</td><td>" . $fmt($r[$key]) . " (" . formatDnu($r['d']) . ")</td></tr>";
   }
 
-  // Nejni��� teplota v m�s�ci (po dnech)
-  $sql = "
-    SELECT d, v FROM (
-      SELECT DATE(date_time) AS d, MIN(temperature) AS v
-      FROM {$TABLE}
-      WHERE MONTH(date_time) = {$i}
-      GROUP BY DATE(date_time)
-    ) z
-    ORDER BY v ASC
-    LIMIT 1";
-  $res = mysqli_query($conn,$sql);
-  if ($res && $r=mysqli_fetch_assoc($res)) {
-    echo "<tr><td>{$lang['minteplota']}</td>
-          <td>".jednotkaTeploty((float)$r['v'],$u,1)." (".formatDnu($r['d']).")</td></tr>";
-  }
-
-  // Nejvy��� denn� sr�ky v m�s�ci � MAX(rain_daily) po dnech dan�ho m�s�ce
-  $sql = "
-    SELECT d, v FROM (
-      SELECT DATE(date_time) AS d, MAX(rain_daily) AS v
-      FROM {$TABLE}
-      WHERE MONTH(date_time) = {$i}
-      GROUP BY DATE(date_time)
-    ) z
-    ORDER BY v DESC
-    LIMIT 1";
-  $res = mysqli_query($conn,$sql);
-  if ($res && $r=mysqli_fetch_assoc($res)) {
-    echo "<tr><td>{$lang['nejvyssidennisrazky']}</td>
-          <td>".round((float)$r['v'],1)." mm (".formatDnu($r['d']).")</td></tr>";
-  }
-
-  // Nejvy��� pr�m�rn� teplota v m�s�ci (AVG po m�s�ci)
-  $sql = "
-    SELECT YEAR(date_time) AS rok, AVG(temperature) AS v
-    FROM {$TABLE}
-    WHERE MONTH(date_time) = {$i}
-    GROUP BY YEAR(date_time), MONTH(date_time)
-    ORDER BY v DESC
-    LIMIT 1";
-  $res = mysqli_query($conn,$sql);
-  if ($res && $r=mysqli_fetch_assoc($res)) {
-    echo "<tr><td>{$lang['nejvyssiprumteplota']}</td>
-          <td>".jednotkaTeploty(round((float)$r['v'],1),$u,1)." (".$r['rok'].")</td></tr>";
-  }
-
-  // Nejni��� pr�m�rn� teplota v m�s�ci
-  $sql = "
-    SELECT YEAR(date_time) AS rok, AVG(temperature) AS v
-    FROM {$TABLE}
-    WHERE MONTH(date_time) = {$i}
-    GROUP BY YEAR(date_time), MONTH(date_time)
-    ORDER BY v ASC
-    LIMIT 1";
-  $res = mysqli_query($conn,$sql);
-  if ($res && $r=mysqli_fetch_assoc($res)) {
-    echo "<tr><td>{$lang['nejnizsiprumteplota']}</td>
-          <td>".jednotkaTeploty(round((float)$r['v'],1),$u,1)." (".$r['rok'].")</td></tr>";
-  }
-
-  // Nejvy��� m�s��n� sr�ky � MAX(rain_monthly) v dan�m m�s�ci
-  $sql = "
-    SELECT YEAR(date_time) AS rok, MAX(rain_monthly) AS v
-    FROM {$TABLE}
-    WHERE MONTH(date_time) = {$i}
-    GROUP BY YEAR(date_time), MONTH(date_time)
-    ORDER BY v DESC
-    LIMIT 1";
-  $res = mysqli_query($conn,$sql);
-  if ($res && $r=mysqli_fetch_assoc($res)) {
-    echo "<tr><td>{$lang['nejvyssimesicnisrazky']}</td>
-          <td>".round((float)$r['v'],1)." mm (".$r['rok'].")</td></tr>";
-  }
-
-  // Nejni��� m�s��n� sr�ky � MAX(rain_monthly) ASC
-  $sql = "
-    SELECT YEAR(date_time) AS rok, MAX(rain_monthly) AS v
-    FROM {$TABLE}
-    WHERE MONTH(date_time) = {$i}
-    GROUP BY YEAR(date_time), MONTH(date_time)
-    ORDER BY v ASC
-    LIMIT 1";
-  $res = mysqli_query($conn,$sql);
-  if ($res && $r=mysqli_fetch_assoc($res)) {
-    echo "<tr><td>{$lang['nejnizsimesicnisrazky']}</td>
-          <td>".round((float)$r['v'],1)." mm (".$r['rok'].")</td></tr>";
+  // rekordy odvozené z celého měsíce – ukazujeme rok
+  foreach ([
+    ['t_avg', 'DESC', $lang['nejvyssiprumteplota'],   $fmtTeplota],
+    ['t_avg', 'ASC',  $lang['nejnizsiprumteplota'],   $fmtTeplota],
+    ['rain',  'DESC', $lang['nejvyssimesicnisrazky'], $fmtMm],
+    ['rain',  'ASC',  $lang['nejnizsimesicnisrazky'], $fmtMm],
+  ] as [$key, $order, $popis, $fmt]) {
+    $r = extrem($mesM, $key, $order);
+    if (!$r) continue;
+    echo "<tr><td>{$popis}</td><td>" . $fmt($r[$key]) . " (" . substr((string)$r['ym'], 0, 4) . ")</td></tr>";
   }
 
   echo "</table>";
-  $i++;
 }
 
-// konec
-mysqli_close($conn);
-
-// p��padn� absolutn� rekordy tu nech�v�m komentovan�, jak jsi m�l.
-// echo "...";
+echo "</div>";
