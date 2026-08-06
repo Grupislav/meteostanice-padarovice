@@ -30,14 +30,12 @@ $sql = "
          MAX(temperature_apparent)  AS a_max,
          MAX(dew_point)             AS dp_max,
          MIN(NULLIF(humidity,0))    AS h_min,
-         AVG(NULLIF(humidity,0))    AS h_avg,
          MIN(NULLIF(pressure_QNH,0)) AS p_min,
          MAX(pressure_QNH)          AS p_max,
          AVG(wind_speed)            AS w_avg,
          MAX(wind_speed)            AS w_max,
          MAX(wind_gust)             AS g_max,
          MAX(exposure)              AS e_max,
-         AVG(exposure)              AS e_avg,
          MAX(uvi)                   AS uvi_max,
          MAX(rain_rate)             AS rr_max,
          MAX(rain_daily)            AS rd_max,
@@ -57,11 +55,7 @@ if ($res = mysqli_query($conn, $sql)) {
 $sql = "
   SELECT DATE_FORMAT(date_time,'%Y-%m-01') AS ym,
          AVG(temperature)   AS t_avg,
-         MIN(temperature)   AS t_min,
-         MAX(temperature)   AS t_max,
-         MAX(rain_monthly)  AS rain,
-         AVG(wind_speed)    AS w_avg,
-         AVG(exposure)      AS e_avg
+         MAX(rain_monthly)  AS rain
   FROM {$TABLE}
   GROUP BY YEAR(date_time), MONTH(date_time)";
 $mesice = [];
@@ -272,7 +266,7 @@ foreach ($absRekordy as [$key, $order, $popis, $fmt, $barva, $format]) {
 
 echo "</div>";
 
-/* ============== REKORDY DLE DNŮ (12 tabulek = 4 / 2 / 1 ve sloupci) ============== */
+/* ============== REKORDY DLE DNŮ (8 tabulek = 4 / 2 / 1 ve sloupci) ============== */
 $nadpis($lang['rekordydlednu']);
 echo "<div class='rekordy-grid'>";
 
@@ -284,26 +278,22 @@ $tabDny($lang['pocnejteplejsidny'],     'a_max', 'DESC', $lang['teplota'],     $
 $tabDny($lang['pocnejchladnejsidny'],   'a_min', 'ASC',  $lang['teplota'],     $fmtTeplota);
 $tabDny($lang['nejdestivejsidny'],      'rd_max','DESC', $lang['srazky'],      $fmtMm);
 $tabDny($lang['nejvetrnejsidny'],       'w_avg', 'DESC', $lang['prumvitr'],    $fmtVitr);
-$tabDny($lang['nejsilnejsinarazydny'],  'g_max', 'DESC', $lang['vitrnaraz'],   $fmtVitr);
-$tabDny($lang['nejslunecnejsidny'],     'e_avg', 'DESC', $lang['prumosvit'],   $fmtOsvit);
-$tabDny($lang['nejvlhcidny'],           'h_avg', 'DESC', $lang['prumvlhkost'], $fmtProcent);
-$tabDny($lang['nejsussidny'],           'h_avg', 'ASC',  $lang['prumvlhkost'], $fmtProcent);
 
 echo "</div>";
 
-/* ============== REKORDY DLE MĚSÍCŮ (8 tabulek = 4 / 2 / 1 ve sloupci) ============== */
+/* ============== REKORDY DLE MĚSÍCŮ (4 tabulky = 4 / 2 / 1 ve sloupci) ==============
+   Nejvyšší minimum / nejnižší maximum tady schválně nejsou: napříč všemi
+   měsíci v roce by v nich byl vždycky jen červenec, resp. leden. Smysl
+   dávají až v rámci jednoho kalendářního měsíce, takže jsou jako řádky
+   v měsíčních přehledech níž. */
 $nadpis($lang['rekordydlemesicu']);
 echo "<p class='poznamka'>" . e($lang['jenuplnemesice']) . "</p>";
 echo "<div class='rekordy-grid'>";
 
 $tabMesice($lang['nejteplejsimesice'],       't_avg', 'DESC', $lang['prumteplota'], $fmtTeplota);
 $tabMesice($lang['nejchladnejsimesice'],     't_avg', 'ASC',  $lang['prumteplota'], $fmtTeplota);
-$tabMesice($lang['nejvyssimesicniminima'],   't_min', 'DESC', $lang['minteplota'],  $fmtTeplota);
-$tabMesice($lang['nejnizsimesicnimaxima'],   't_max', 'ASC',  $lang['maxteplota'],  $fmtTeplota);
 $tabMesice($lang['nejdestivejsimesice'],     'rain',  'DESC', $lang['srazky'],      $fmtMm);
 $tabMesice($lang['nejsussimesice'],          'rain',  'ASC',  $lang['srazky'],      $fmtMm);
-$tabMesice($lang['nejvetrnejsimesice'],      'w_avg', 'DESC', $lang['prumvitr'],    $fmtVitr);
-$tabMesice($lang['nejslunecnejsimesice'],    'e_avg', 'DESC', $lang['prumosvit'],   $fmtOsvit);
 
 echo "</div>";
 

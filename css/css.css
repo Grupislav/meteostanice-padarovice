@@ -100,7 +100,7 @@ nav ul > li > a { cursor: default; }
    Layout drzi CSS grid s pevnym poctem sloupcu (drive float), takze ruzne
    vysoke tabulky uz o sebe nezachytavaji a nevznikaji diry v radcich.
    Pocty sloupcu na kazdem breakpointu jsou delitelem poctu polozek
-   (20 dlazdic, 3 dlazdice v hlavicce, 12 resp. 8 tabulek), aby zadny
+   (20 dlazdic, 3 dlazdice v hlavicce, 8 / 4 / 12 tabulek), aby zadny
    radek nezustal necely.
    POZOR: barvici tridy (.teplotaXX, .osvitXXX, .uviX, ...) jsou az pod
    timhle blokem, aby mohly prebit vychozi bilou barvu textu dlazdice. */
@@ -226,7 +226,7 @@ legend{color: white;background: #00a186;border: 1px solid #00a186;padding: 2px 6
 /* zalozka rekordy – pocty sloupcu po breakpointech
    dlazdice (20 ks): 5 / 4 / 2 / 1
    dlazdice v hlavicce (3 ks): 3 / 1
-   tabulky (12 resp. 8 ks): 4 / 2 / 1, mesicni prehledy (12 ks): 3 / 2 / 1 */
+   tabulky zebricku (8 resp. 4 ks): 4 / 2 / 1, mesicni prehledy (12 ks): 3 / 2 / 1 */
 @media (max-width: 1199px) {
   .rekordy-dlazdice { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
