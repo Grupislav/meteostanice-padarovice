@@ -16,6 +16,8 @@ $sql = "
     AVG(humidity)              AS humidity,
     AVG(dew_point)             AS dew_point,
     AVG(rain_rate)             AS rain_rate,   -- mm/h
+    -- Zamerne MAX() nad pocitadlem: graf ukazuje prubeh kumulativu, ne uhrn
+    -- za obdobi, takze se ho pretekani pres hranici tydne netyka.
     MAX(rain_weekly)           AS rain_weekly, -- mm (kumulativ za t�den)
     AVG(pressure_QNH)          AS pressure_QNH,
     AVG(exposure)              AS exposure,

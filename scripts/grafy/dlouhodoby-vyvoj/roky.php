@@ -13,7 +13,6 @@ $sql = "
     AVG(temperature)            AS t_avg,
     MIN(temperature)            AS t_min,
     MAX(temperature)            AS t_max,
-    MAX(rain_yearly)            AS rain_y,
     AVG(dew_point)              AS dew,
     AVG(humidity)               AS hum,
     AVG(pressure_QNH)           AS qnh,
@@ -23,6 +22,9 @@ $sql = "
   GROUP BY YEAR(date_time)
   ORDER BY y ASC";
 $res = mysqli_query($conn, $sql);
+// Rocni uhrny z prirustku, ne z MAX(rain_yearly) — na prelomu roku by leden
+// pretahl lonsky uhrn. Viz denniUhrnySrazek v fce.php.
+$rocniRain = uhrnyPoRocich(denniUhrnySrazek($conn, $TABLE));
 mysqli_close($conn);
 
 if (!$res || mysqli_num_rows($res) <= 0) { echo "Nemame data!"; return; }
@@ -37,7 +39,7 @@ while ($t = mysqli_fetch_assoc($res)) {
   $yMax[]  = jednotkaTeploty((float)$t['t_max'], $u, 0);
   $yAvg[]  = jednotkaTeploty(round((float)$t['t_avg'], 1), $u, 0);
   $yMin[]  = jednotkaTeploty((float)$t['t_min'], $u, 0);
-  $yRain[] = round((float)$t['rain_y'], 1);
+  $yRain[] = $rocniRain[$year] ?? 0;
 
   $yDew[]  = jednotkaTeploty(round((float)$t['dew'], 1), $u, 0);
   $yHum[]  = round((float)$t['hum'], 1);

@@ -12,9 +12,13 @@ if (!$conn) {
 }
 
 // helper: vezmi záznam s extrémem v daném sloupci
+// Tie-break na date_time ASC: když stejnou hodnotu drží víc záznamů, chceme ten
+// první. U srážkových počitadel je to podstatné — přetečení přes půlnoc udělá
+// kopii včerejšího maxima v novém dni a bez tie-breaku by rekord mohl dostat
+// datum následujícího dne.
 $ext = function(string $col, string $order = 'DESC') use ($conn) {
   $order = strtoupper($order) === 'ASC' ? 'ASC' : 'DESC';
-  $sql = "SELECT `$col` AS v, `date_time` AS d FROM `history_cron_padarovice` ORDER BY `$col` $order LIMIT 1";
+  $sql = "SELECT `$col` AS v, `date_time` AS d FROM `history_cron_padarovice` ORDER BY `$col` $order, `date_time` ASC LIMIT 1";
   $res = mysqli_query($conn, $sql);
   if (!$res) return [null, null];
   $row = mysqli_fetch_assoc($res);
@@ -33,12 +37,17 @@ $ext = function(string $col, string $order = 'DESC') use ($conn) {
 [$maxrosnybod,    $maxrosnyboddat]    = $ext('dew_point',             'DESC');
 [$minrosnybod,    $minrosnyboddat]    = $ext('dew_point',             'ASC');
 [$minvlhkost,     $minvlhkostdat]     = $ext('humidity',              'ASC');
-[$maxdenniuhrn,   $maxdenniuhrndat]   = $ext('rain_daily',            'DESC');
 [$maxvitr,        $maxvitrdat]        = $ext('wind_speed',            'DESC');
 [$maxnaraz,       $maxnarazdat]       = $ext('wind_gust',             'DESC');
 [$maxosvit,       $maxosvitdat]       = $ext('exposure',              'DESC');
 [$maxtlak,        $maxtlakdat]        = $ext('pressure_QNH',          'DESC');
 [$mintlak,        $mintlakdat]        = $ext('pressure_QNH',          'ASC');
+
+// Nejvyssi denni uhrn: globalni MAX pres celou historii je vuci pretekani
+// pocitadle pres pulnoc odolny (pretecena hodnota nikdy neprekroci skutecne
+// maximum, ktere uz v datech je), takze hodnota sedi se zalozkou Rekordy.
+// Datum resi tie-break v $ext - viz komentar tam.
+[$maxdenniuhrn,   $maxdenniuhrndat]   = $ext('rain_daily',            'DESC');
 
 mysqli_close($conn);
 

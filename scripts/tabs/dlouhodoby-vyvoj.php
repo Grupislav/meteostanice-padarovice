@@ -10,36 +10,39 @@ $TABLE = "history_cron_padarovice";
 $conn = mysqli_connect($dbServer,$dbUzivatel,$dbHeslo,$dbDb);
 if (!$conn) { exit("Nejaky problem s DB: " . mysqli_connect_error()); }
 
+// Srazkove uhrny se scitaji z prirustku, ne z MAX(rain_monthly)/MAX(rain_yearly) —
+// tam by rozjety mesic (resp. rok) prebral hodnotu toho predchoziho, dokud ji
+// neprekona. Viz denniUhrnySrazek v fce.php.
+$denniRain   = denniUhrnySrazek($conn, $TABLE);
+$srazkymesic = uhrnyPoMesicich($denniRain)[date('Y-m')] ?? 0.0;
+$srazkyrok   = uhrnyPoRocich($denniRain)[date('Y')]     ?? 0.0;
+
 $sqlM = "
   SELECT MAX(temperature) AS maxteplotamesic,
-         MIN(temperature) AS minteplotamesic,
-         MAX(rain_monthly) AS srazkymesic
+         MIN(temperature) AS minteplotamesic
   FROM {$TABLE}
   WHERE YEAR(date_time) = YEAR(CURDATE())
     AND MONTH(date_time) = MONTH(CURDATE())";
 $resM = mysqli_query($conn, $sqlM);
-list($maxteplotamesic,$minteplotamesic,$srazkymesic) = [null,null,0.0];
+list($maxteplotamesic,$minteplotamesic) = [null,null];
 if ($resM && mysqli_num_rows($resM) > 0) {
   $row = mysqli_fetch_assoc($resM);
   $maxteplotamesic = (float)$row['maxteplotamesic'];
   $minteplotamesic = (float)$row['minteplotamesic'];
-  $srazkymesic = is_null($row['srazkymesic']) ? 0.0 : round((float)$row['srazkymesic'], 1);
 }
 
 // �� MIN/MAX aktu�ln� rok �����������������������������������������������
 $sqlR = "
   SELECT MAX(temperature) AS maxteplotarok,
-         MIN(temperature) AS minteplotarok,
-         MAX(rain_yearly) AS srazkyrok
+         MIN(temperature) AS minteplotarok
   FROM {$TABLE}
   WHERE YEAR(date_time) = YEAR(CURDATE())";
 $resR = mysqli_query($conn, $sqlR);
-list($maxteplotarok,$minteplotarok,$srazkyrok) = [null,null,0.0];
+list($maxteplotarok,$minteplotarok) = [null,null];
 if ($resR && mysqli_num_rows($resR) > 0) {
   $row = mysqli_fetch_assoc($resR);
   $maxteplotarok = (float)$row['maxteplotarok'];
   $minteplotarok = (float)$row['minteplotarok'];
-  $srazkyrok = is_null($row['srazkyrok']) ? 0.0 : round((float)$row['srazkyrok'], 1);
 }
 
 // Srazkove normaly (WMO 1991-2020) z DB:

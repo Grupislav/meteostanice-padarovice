@@ -13,7 +13,6 @@ $sql = "
     AVG(temperature)          AS t_avg,
     MIN(temperature)          AS t_min,
     MAX(temperature)          AS t_max,
-    MAX(rain_daily)           AS rain_sum,   -- denn� �hrn
     AVG(dew_point)            AS dew,
     AVG(humidity)             AS hum,
     AVG(pressure_QNH)         AS qnh,
@@ -24,6 +23,9 @@ $sql = "
   GROUP BY DATE(date_time)
   ORDER BY d ASC";
 $res = mysqli_query($conn, $sql);
+// Denni uhrny z prirustku, ne z MAX(rain_daily) — prvni zaznamy dne jeste nesou
+// hodnotu vcerejska. Viz denniUhrnySrazek v fce.php.
+$denniRain = denniUhrnySrazek($conn, $TABLE);
 mysqli_close($conn);
 
 if (!$res || mysqli_num_rows($res) <= 0) { echo "Nemame data!"; return; }
@@ -34,7 +36,7 @@ while($t = mysqli_fetch_assoc($res)){
   $yMax[]   = jednotkaTeploty((float)$t['t_max'], $u, 0);
   $yAvg[]   = jednotkaTeploty(round((float)$t['t_avg'],1), $u, 0);
   $yMin[]   = jednotkaTeploty((float)$t['t_min'], $u, 0);
-  $yRain[]  = round((float)$t['rain_sum'], 2);
+  $yRain[]  = $denniRain[(string)$t['d']] ?? 0;
 
   $yDew[]   = jednotkaTeploty(round((float)$t['dew'],1),   $u, 0);
   $yHum[]   = round((float)$t['hum'],1);

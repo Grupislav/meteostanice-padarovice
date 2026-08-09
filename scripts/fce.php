@@ -61,6 +61,95 @@ function formatDnu($datum) {
     return $dt ? $dt->format('j. n. Y') : (string)$datum;
 }
 
+/**
+ * Denní úhrny srážek spočítané ze skutečných přírůstků počitadla rain_daily.
+ *
+ * Proč ne MAX(rain_daily) / MAX(rain_monthly) / MAX(rain_yearly) seskupené přes
+ * období: srážková počitadla stanice se resetují podle hodin konzole, takže
+ * první záznamy nového dne (resp. měsíce, roku) ještě nesou hodnotu období
+ * předchozího. MAX() ji sebere a nové období pak ukazuje úhrn toho starého —
+ * ale jen když je nové sušší, takže se chyba schová, kdykoli srážek přibývá.
+ * Reálný příklad: srpen 2026 hlásil 87,4 mm (přesně červencový úhrn), zatímco
+ * ve skutečnosti spadly ~4 mm; prosinec 2025 hlásil listopadových 40,4 mm.
+ *
+ * Sčítání přírůstků je vůči zarovnání hranic imunní — nekouká na to, do jakého
+ * dne záznam spadá, jen na pořadí hodnot, a pokles bere jako reset počitadla.
+ * Stejný postup používá týdenní úhrn v scripts/tabs/aktualne.php.
+ *
+ * Pozn.: globální MAX() přes celou historii (bez GROUP BY období) touto vadou
+ * netrpí — přetečená hodnota nikdy nepřesáhne skutečné maximum, které už
+ * v datech je. Proto se rekordní hodnoty v hlavičce nemusely přepočítávat.
+ *
+ * Výsledek se drží v paměti po dobu requestu, aby se okenní dotaz nad celou
+ * historií nepouštěl vícekrát (záložka Dlouhodobý vývoj tahá tři grafy naráz).
+ *
+ * @return array<string,float> ['YYYY-MM-DD' => mm], chronologicky vzestupně
+ */
+function denniUhrnySrazek($conn, string $table = 'history_cron_padarovice'): array {
+    static $cache = [];
+    if (isset($cache[$table])) { return $cache[$table]; }
+
+    $sql = "
+      SELECT d, ROUND(SUM(inc), 2) AS mm
+      FROM (
+        SELECT DATE(date_time) AS d,
+               CASE WHEN prev IS NULL            THEN 0
+                    WHEN rain_daily >= prev      THEN rain_daily - prev
+                    ELSE rain_daily END          AS inc
+        FROM (
+          SELECT date_time, rain_daily,
+                 LAG(rain_daily) OVER (ORDER BY date_time) AS prev
+          FROM `{$table}`
+        ) a
+      ) b
+      GROUP BY d
+      ORDER BY d";
+
+    $out = [];
+    if ($res = mysqli_query($conn, $sql)) {
+        while ($r = mysqli_fetch_assoc($res)) { $out[(string)$r['d']] = (float)$r['mm']; }
+    }
+    return $cache[$table] = $out;
+}
+
+/** Sečte denní úhrny do období daného délkou prefixu klíče (7 = měsíc, 4 = rok). */
+function uhrnyPoObdobich(array $denni, int $delkaKlice): array {
+    $out = [];
+    foreach ($denni as $d => $mm) {
+        $k = substr($d, 0, $delkaKlice);
+        $out[$k] = ($out[$k] ?? 0.0) + $mm;
+    }
+    return array_map(fn($v) => round($v, 1), $out);
+}
+
+/** Měsíční úhrny ['YYYY-MM' => mm] z denních. */
+function uhrnyPoMesicich(array $denni): array { return uhrnyPoObdobich($denni, 7); }
+
+/** Roční úhrny ['YYYY' => mm] z denních. */
+function uhrnyPoRocich(array $denni): array { return uhrnyPoObdobich($denni, 4); }
+
+/**
+ * Klouzavé sedmidenní úhrny — pro „rekordní týden". Okno je kalendářní
+ * (den a šest předchozích), takže díry v měření se počítají jako nula
+ * a výsledek nezávisí na tom, kdy stanici začíná týden.
+ *
+ * @return array<int,array{d:string,mm:float}> indexované chronologicky
+ */
+function klouzaveTydenniUhrny(array $denni): array {
+    $out = [];
+    foreach ($denni as $d => $_) {
+        $ts = strtotime($d);
+        if ($ts === false) { continue; }
+        $suma = 0.0;
+        for ($i = 0; $i < 7; $i++) {
+            // strtotime misto odecitani sekund kvuli prechodu na letni cas
+            $suma += $denni[date('Y-m-d', strtotime("-{$i} day", $ts))] ?? 0.0;
+        }
+        $out[] = ['d' => $d, 'mm' => round($suma, 1)];
+    }
+    return $out;
+}
+
 function jednotkaTeploty($teplota = "", $jednotka = "C", $znak = 0) {
     $fmt = function($v, $s='') use($znak){ return $znak ? ($v . " $s") : $v; };
     if ($teplota === "" && $teplota !== 0) { return "-"; }

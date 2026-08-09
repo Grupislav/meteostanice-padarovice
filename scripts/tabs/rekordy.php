@@ -38,11 +38,7 @@ $sql = "
          MAX(exposure)              AS e_max,
          MAX(uvi)                   AS uvi_max,
          MAX(rain_rate)             AS rr_max,
-         MAX(rain_daily)            AS rd_max,
-         MAX(rain_event)            AS re_max,
-         MAX(rain_weekly)           AS rw_max,
-         MAX(rain_monthly)          AS rm_max,
-         MAX(rain_yearly)           AS ry_max
+         MAX(rain_event)            AS re_max
   FROM {$TABLE}
   GROUP BY DATE(date_time)";
 $dny = [];
@@ -50,17 +46,34 @@ if ($res = mysqli_query($conn, $sql)) {
   while ($r = mysqli_fetch_assoc($res)) { $dny[] = $r; }
 }
 
+/* Srážkové úhrny se sčítají z přírůstků (viz denniUhrnySrazek v fce.php), ne
+   z MAX(rain_daily/monthly/yearly) po obdobích — tam období převezme hodnotu
+   toho předchozího, dokud ji nepřekoná. rain_event zůstává na MAX(), protože
+   epizoda není vázaná na kalendářní hranici. */
+$denniRain = denniUhrnySrazek($conn, $TABLE);
+foreach ($dny as $i => $r) { $dny[$i]['rain'] = $denniRain[(string)$r['d']] ?? 0.0; }
+
+// řady pro dlaždice rekordních týdnů / měsíců / roků
+$tydny    = klouzaveTydenniUhrny($denniRain);
+$mesRows  = [];
+foreach (uhrnyPoMesicich($denniRain) as $ym => $mm) { $mesRows[] = ['d' => $ym . '-01', 'mm' => $mm]; }
+$rokRows  = [];
+foreach (uhrnyPoRocich($denniRain)   as $y  => $mm) { $rokRows[] = ['d' => $y . '-01-01', 'mm' => $mm]; }
+
 /* Měsíční agregát – průměry se počítají ze všech měření v měsíci, ne
    z průměrů dní (dny mají různý počet vzorků). */
 $sql = "
   SELECT DATE_FORMAT(date_time,'%Y-%m-01') AS ym,
-         AVG(temperature)   AS t_avg,
-         MAX(rain_monthly)  AS rain
+         AVG(temperature)   AS t_avg
   FROM {$TABLE}
   GROUP BY YEAR(date_time), MONTH(date_time)";
 $mesice = [];
 if ($res = mysqli_query($conn, $sql)) {
-  while ($r = mysqli_fetch_assoc($res)) { $mesice[] = $r; }
+  $mesicniRain = uhrnyPoMesicich($denniRain);
+  while ($r = mysqli_fetch_assoc($res)) {
+    $r['rain'] = $mesicniRain[substr((string)$r['ym'], 0, 7)] ?? 0.0;
+    $mesice[] = $r;
+  }
 }
 
 mysqli_close($conn);
@@ -205,9 +218,9 @@ if (SHOW_HEADLINE) {
     echo "<div class='rekordy-tridlazdice'>";
 
     foreach ([
-      ['t_max',  'DESC', $lang['nejvyssiteplota'], $fmtTeplota, 'barvaRameckuTeploty'],
-      ['t_min',  'ASC',  $lang['nejnizsiteplota'], $fmtTeplota, 'barvaRameckuTeploty'],
-      ['rd_max', 'DESC', $lang['nejvyssiuhrn'],    $fmtMm,      'barvaRameckuSrazky'],
+      ['t_max', 'DESC', $lang['nejvyssiteplota'], $fmtTeplota, 'barvaRameckuTeploty'],
+      ['t_min', 'ASC',  $lang['nejnizsiteplota'], $fmtTeplota, 'barvaRameckuTeploty'],
+      ['rain',  'DESC', $lang['nejvyssiuhrn'],    $fmtMm,      'barvaRameckuSrazky'],
     ] as [$key, $order, $popis, $fmt, $barva]) {
       $r = extrem($dnesek, $key, $order);
       if (!$r) continue;
@@ -223,43 +236,47 @@ if (SHOW_HEADLINE) {
 $nadpis($lang['absolutnirekordy']);
 echo "<div class='rekordy-dlazdice'>";
 
-/* [klíč denního agregátu, řazení, popisek, formátovač hodnoty, barvicí funkce, formát data]
-   Formát data: 'den' = j. n. Y, 'mesic' = n. Y, 'rok' = Y (u kumulativních
-   srážkových počitadel dává smysl ukazovat jen období, ne přesný den). */
+/* [zdrojová řada, klíč, řazení, popisek, formátovač hodnoty, barvicí funkce, formát data]
+   Formát data: 'den' = j. n. Y, 'tyden' = rozsah okna, 'mesic' = n. Y, 'rok' = Y. */
 $absRekordy = [
-  ['t_max',   'DESC', $lang['nejvyssiteplota'],       $fmtTeplota, 'barvaRameckuTeploty',     'den'],
-  ['t_min',   'ASC',  $lang['nejnizsiteplota'],       $fmtTeplota, 'barvaRameckuTeploty',     'den'],
-  ['t_min',   'DESC', $lang['nejvyssidennimin'],      $fmtTeplota, 'barvaRameckuTeploty',     'den'],
-  ['t_max',   'ASC',  $lang['nejnizsidennimax'],      $fmtTeplota, 'barvaRameckuTeploty',     'den'],
-  ['a_max',   'DESC', $lang['nejvyssipocteplota'],    $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+  [$dny, 't_max',   'DESC', $lang['nejvyssiteplota'],       $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+  [$dny, 't_min',   'ASC',  $lang['nejnizsiteplota'],       $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+  [$dny, 't_min',   'DESC', $lang['nejvyssidennimin'],      $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+  [$dny, 't_max',   'ASC',  $lang['nejnizsidennimax'],      $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+  [$dny, 'a_max',   'DESC', $lang['nejvyssipocteplota'],    $fmtTeplota, 'barvaRameckuTeploty',     'den'],
 
-  ['a_min',   'ASC',  $lang['nejnizsipocteplota'],    $fmtTeplota, 'barvaRameckuTeploty',     'den'],
-  ['dp_max',  'DESC', $lang['nejvyssirosnybod'],      $fmtTeplota, 'barvaRameckuTeploty',     'den'],
-  ['h_min',   'ASC',  $lang['nejnizsivlhkost'],       $fmtProcent, 'barvaRameckuVlhkost',     'den'],
-  ['p_max',   'DESC', $lang['nejvyssitlak'],          $fmtTlak,    'barvaRameckuTlak',        'den'],
-  ['p_min',   'ASC',  $lang['nejnizsitlak'],          $fmtTlak,    'barvaRameckuTlak',        'den'],
+  [$dny, 'a_min',   'ASC',  $lang['nejnizsipocteplota'],    $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+  [$dny, 'dp_max',  'DESC', $lang['nejvyssirosnybod'],      $fmtTeplota, 'barvaRameckuTeploty',     'den'],
+  [$dny, 'h_min',   'ASC',  $lang['nejnizsivlhkost'],       $fmtProcent, 'barvaRameckuVlhkost',     'den'],
+  [$dny, 'p_max',   'DESC', $lang['nejvyssitlak'],          $fmtTlak,    'barvaRameckuTlak',        'den'],
+  [$dny, 'p_min',   'ASC',  $lang['nejnizsitlak'],          $fmtTlak,    'barvaRameckuTlak',        'den'],
 
-  ['w_max',   'DESC', $lang['nejrychlejsivitr'],      $fmtVitr,    'barvaRameckuVitr',        'den'],
-  ['g_max',   'DESC', $lang['nejprudsinaraz'],        $fmtVitr,    'barvaRameckuVitr',        'den'],
-  ['e_max',   'DESC', $lang['maxosvit'],              $fmtOsvit,   'barvaRameckuOsvit',       'den'],
-  ['uvi_max', 'DESC', $lang['maxuvi'],                $fmtUvi,     'barvaRameckuUV',          'den'],
-  ['rr_max',  'DESC', $lang['maxintenzitasrazek'],    $fmtMmH,     'barvaRameckuSrazky',      'den'],
+  [$dny, 'w_max',   'DESC', $lang['nejrychlejsivitr'],      $fmtVitr,    'barvaRameckuVitr',        'den'],
+  [$dny, 'g_max',   'DESC', $lang['nejprudsinaraz'],        $fmtVitr,    'barvaRameckuVitr',        'den'],
+  [$dny, 'e_max',   'DESC', $lang['maxosvit'],              $fmtOsvit,   'barvaRameckuOsvit',       'den'],
+  [$dny, 'uvi_max', 'DESC', $lang['maxuvi'],                $fmtUvi,     'barvaRameckuUV',          'den'],
+  [$dny, 'rr_max',  'DESC', $lang['maxintenzitasrazek'],    $fmtMmH,     'barvaRameckuSrazky',      'den'],
 
-  ['rd_max',  'DESC', $lang['nejvyssiuhrn'],          $fmtMm,      'barvaRameckuSrazky',      'den'],
-  ['re_max',  'DESC', $lang['nejvyssiuhrnepizody'],   $fmtMm,      'barvaRameckuSrazky',      'den'],
-  ['rw_max',  'DESC', $lang['nejvyssityuhrn'],        $fmtMm,      'barvaRameckuSrazkyMesic', 'den'],
-  ['rm_max',  'DESC', $lang['nejvyssimuhrn'],         $fmtMm,      'barvaRameckuSrazkyMesic', 'mesic'],
-  ['ry_max',  'DESC', $lang['nejvyssiruhrn'],         $fmtMm,      'barvaRameckuSrazkyRok',   'rok'],
+  [$dny,     'rain',   'DESC', $lang['nejvyssiuhrn'],        $fmtMm, 'barvaRameckuSrazky',      'den'],
+  [$dny,     're_max', 'DESC', $lang['nejvyssiuhrnepizody'], $fmtMm, 'barvaRameckuSrazky',      'den'],
+  [$tydny,   'mm',     'DESC', $lang['nejvyssityuhrn'],      $fmtMm, 'barvaRameckuSrazkyMesic', 'tyden'],
+  [$mesRows, 'mm',     'DESC', $lang['nejvyssimuhrn'],       $fmtMm, 'barvaRameckuSrazkyMesic', 'mesic'],
+  [$rokRows, 'mm',     'DESC', $lang['nejvyssiruhrn'],       $fmtMm, 'barvaRameckuSrazkyRok',   'rok'],
 ];
 
-foreach ($absRekordy as [$key, $order, $popis, $fmt, $barva, $format]) {
-  $r = extrem($dny, $key, $order);
+foreach ($absRekordy as [$rada, $key, $order, $popis, $fmt, $barva, $format]) {
+  $r = extrem($rada, $key, $order);
   if (!$r) { echo "<div class='dlazdice'><div class='dl-popis'>" . rtrim($popis, ':') . "</div><div class='dl-hodnota'>&mdash;</div><div class='dl-datum'>&nbsp;</div></div>"; continue; }
 
   $v  = (float)$r[$key];
   $ts = strtotime((string)$r['d']);
-  $datum = $format === 'rok'   ? date('Y', $ts)
-         : ($format === 'mesic' ? date('n. Y', $ts) : formatDnu($r['d']));
+  switch ($format) {
+    case 'rok':   $datum = date('Y', $ts); break;
+    case 'mesic': $datum = date('n. Y', $ts); break;
+    // u týdne ukazujeme celé okno, ať je zřejmé, kterých sedm dní se sečetlo
+    case 'tyden': $datum = date('j. n.', $ts - 6 * 86400) . ' – ' . formatDnu($r['d']); break;
+    default:      $datum = formatDnu($r['d']);
+  }
 
   $dlazdice($barva($v), $popis, $fmt($v), $datum);
 }
@@ -276,7 +293,7 @@ $tabDny($lang['nejnizsimaxima'],        't_max', 'ASC',  $lang['teplota'],     $
 $tabDny($lang['nejvyssiminima'],        't_min', 'DESC', $lang['teplota'],     $fmtTeplota);
 $tabDny($lang['pocnejteplejsidny'],     'a_max', 'DESC', $lang['teplota'],     $fmtTeplota);
 $tabDny($lang['pocnejchladnejsidny'],   'a_min', 'ASC',  $lang['teplota'],     $fmtTeplota);
-$tabDny($lang['nejdestivejsidny'],      'rd_max','DESC', $lang['srazky'],      $fmtMm);
+$tabDny($lang['nejdestivejsidny'],      'rain',  'DESC', $lang['srazky'],      $fmtMm);
 $tabDny($lang['nejvetrnejsidny'],       'w_avg', 'DESC', $lang['prumvitr'],    $fmtVitr);
 
 echo "</div>";
@@ -318,7 +335,7 @@ for ($i = 1; $i <= 12; $i++) {
     ['t_min',  'ASC',  $lang['minteplota'],           $fmtTeplota],
     ['t_min',  'DESC', $lang['nejvyssiminimum'],      $fmtTeplota],
     ['t_max',  'ASC',  $lang['nejnizsimaximum'],      $fmtTeplota],
-    ['rd_max', 'DESC', $lang['nejvyssidennisrazky'],  $fmtMm],
+    ['rain',   'DESC', $lang['nejvyssidennisrazky'],  $fmtMm],
   ] as [$key, $order, $popis, $fmt]) {
     $r = extrem($dnyM, $key, $order);
     if (!$r) continue;

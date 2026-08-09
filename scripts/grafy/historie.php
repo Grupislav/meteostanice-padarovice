@@ -20,7 +20,7 @@ $denEsc = mysqli_real_escape_string($conn, $den);
  * Agregace do 10min bucket�:
  *  - bucket_time = 00:00, 00:10, 00:20, ...
  *  - teplota/pocteplota/� = AVG
- *  - sr�ky = MAX(rain_daily) - MIN(rain_daily) v bucketu (p��r�stek)
+ *  - sr�ky = soucet prirustku rain_daily v bucketu, pokles = reset pocitadla o pulnoci (p��r�stek)
  * Pozn.: pokud nem� rain_daily, bude pot�eba p�epnout na SUM(precipitation) a odstranit delta.
  */
 $sql = "
@@ -30,12 +30,19 @@ SELECT
   AVG(temperature_apparent)   AS avg_app,
   AVG(humidity)               AS avg_hum,
   AVG(dew_point)              AS avg_dew,
-  (MAX(rain_daily) - MIN(rain_daily)) AS rain_inc,
+  SUM(CASE WHEN prev IS NULL       THEN 0
+           WHEN rain_daily >= prev THEN rain_daily - prev
+           ELSE rain_daily END)   AS rain_inc,
   AVG(pressure_QNH)           AS avg_press,
   AVG(exposure)               AS avg_expo,
   AVG(wind_speed)             AS avg_wind
-FROM {$TABLE}
-WHERE DATE(date_time) = '{$denEsc}'
+FROM (
+  SELECT date_time, temperature, temperature_apparent, humidity, dew_point,
+         rain_daily, pressure_QNH, exposure, wind_speed,
+         LAG(rain_daily) OVER (ORDER BY date_time) AS prev
+  FROM {$TABLE}
+  WHERE DATE(date_time) = '{$denEsc}'
+) x
 GROUP BY bucket_time
 ORDER BY bucket_time ASC";
 

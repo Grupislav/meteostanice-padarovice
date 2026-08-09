@@ -13,7 +13,6 @@ $sql = "
     AVG(temperature)          AS t_avg,
     MIN(temperature)          AS t_min,
     MAX(temperature)          AS t_max,
-    MAX(rain_monthly)         AS rain_m,      -- m�s��n� �hrn
     AVG(dew_point)            AS dew,
     AVG(humidity)             AS hum,
     AVG(pressure_QNH)         AS qnh,
@@ -24,17 +23,20 @@ $sql = "
   ORDER BY m DESC
   LIMIT 36";
 $res = mysqli_query($conn, $sql);
+// Mesicni uhrny z prirustku, ne z MAX(rain_monthly) — viz denniUhrnySrazek v fce.php.
+$mesicniRain = uhrnyPoMesicich(denniUhrnySrazek($conn, $TABLE));
 mysqli_close($conn);
 
 if (!$res || mysqli_num_rows($res) <= 0) { echo "Nemame data!"; return; }
 
 $labels=$yMax=$yAvg=$yMin=$yRain=$yDew=$yHum=$yQnh=$yExp=$yWind=[];
 while($t = mysqli_fetch_assoc($res)){
-  $labels[] = substr($t['m'],0,7);
+  $ym = substr($t['m'],0,7);
+  $labels[] = $ym;
   $yMax[]   = jednotkaTeploty((float)$t['t_max'], $u, 0);
   $yAvg[]   = jednotkaTeploty(round((float)$t['t_avg'],1), $u, 0);
   $yMin[]   = jednotkaTeploty((float)$t['t_min'], $u, 0);
-  $yRain[]  = round((float)$t['rain_m'], 1);
+  $yRain[]  = $mesicniRain[$ym] ?? 0;
 
   $yDew[]   = jednotkaTeploty(round((float)$t['dew'],1),   $u, 0);
   $yHum[]   = round((float)$t['hum'],1);

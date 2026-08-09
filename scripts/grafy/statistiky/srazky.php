@@ -9,37 +9,30 @@ $conn = mysqli_connect($dbServer,$dbUzivatel,$dbHeslo,$dbDb);
 if (!$conn) { echo "Nejaky problem s DB: " . mysqli_connect_error(); return; }
 mysqli_query($conn, "SET NAMES 'utf8mb4'");
 
-$sql = "
-  SELECT
-    DATE_FORMAT(h.date_time, '%Y-%m-01') AS ym,
-    MAX(h.rain_monthly)                  AS srazky,
-    MONTH(h.date_time)                   AS mesic,
-    pn.normal19812010,
-    pn.normal19611990,
-    pn.normal19912020
-  FROM {$TABLE} h
-  JOIN precipitation_normals pn ON pn.month = MONTH(h.date_time)
-  GROUP BY YEAR(h.date_time), MONTH(h.date_time)
-  ORDER BY ym DESC
-  LIMIT 36";
-$res = mysqli_query($conn, $sql);
+// Mesicni uhrny se scitaji z prirustku (viz denniUhrnySrazek v fce.php) — MAX(rain_monthly)
+// pres kalendarni mesic sebere hodnotu prechoziho mesice, kdyz je ten novy sussi.
+$mesicni = uhrnyPoMesicich(denniUhrnySrazek($conn, $TABLE));
+
+$normaly = [];
+if ($res = mysqli_query($conn, "SELECT month, normal19812010, normal19611990, normal19912020 FROM precipitation_normals")) {
+  while ($n = mysqli_fetch_assoc($res)) { $normaly[(int)$n['month']] = $n; }
+}
 mysqli_close($conn);
 
-if (!$res || mysqli_num_rows($res) <= 0) { echo "Nemame data!"; return; }
+if (!$mesicni) { echo "Nemame data!"; return; }
+
+ksort($mesicni);
+$mesicni = array_slice($mesicni, -36, null, true); // poslednich 36 mesicu, chronologicky
 
 $labels = $ydata = $ydata2 = $ydata3 = $ydata4 = [];
-while ($t = mysqli_fetch_assoc($res)) {
-  $labels[] = substr($t['ym'],0,7);
-  $ydata[]  = round((float)$t['srazky'], 1);
-  $ydata2[] = (float)$t['normal19812010'];
-  $ydata3[] = (float)$t['normal19611990'];
-  $ydata4[] = (float)$t['normal19912020'];
+foreach ($mesicni as $ym => $mm) {
+  $m = (int)substr($ym, 5, 2);
+  $labels[] = $ym;
+  $ydata[]  = $mm;
+  $ydata2[] = isset($normaly[$m]) ? (float)$normaly[$m]['normal19812010'] : null;
+  $ydata3[] = isset($normaly[$m]) ? (float)$normaly[$m]['normal19611990'] : null;
+  $ydata4[] = isset($normaly[$m]) ? (float)$normaly[$m]['normal19912020'] : null;
 }
-$labels = array_reverse($labels);
-$ydata  = array_reverse($ydata);
-$ydata2 = array_reverse($ydata2);
-$ydata3 = array_reverse($ydata3);
-$ydata4 = array_reverse($ydata4);
 ?>
 <script>
 jQuery(function($){
