@@ -89,16 +89,27 @@ function denniUhrnySrazek($conn, string $table = 'history_cron_padarovice'): arr
     static $cache = [];
     if (isset($cache[$table])) { return $cache[$table]; }
 
+    // Na hranici dne se musí rozlišit dva případy, které samotné porovnání
+    // hodnot neodliší: (a) záznam ještě nese včerejší součet, protože počitadlo
+    // zatím neresetovalo — pozná se podle toho, že se hodnota vůbec nezměnila,
+    // a nesmí se počítat; (b) počitadlo resetovalo a hned pršelo, takže první
+    // hodnota nového dne může být vyšší než včerejší konec — tam je celá
+    // hodnota přírůstkem, ne rozdílem (jinak by se o včerejší součet zkrátila).
     $sql = "
       SELECT d, ROUND(SUM(inc), 2) AS mm
       FROM (
         SELECT DATE(date_time) AS d,
-               CASE WHEN prev IS NULL            THEN 0
-                    WHEN rain_daily >= prev      THEN rain_daily - prev
-                    ELSE rain_daily END          AS inc
+               CASE
+                 WHEN prev IS NULL                                      THEN rain_daily
+                 WHEN prev_d <> DATE(date_time) AND rain_daily <> prev   THEN rain_daily
+                 WHEN prev_d <> DATE(date_time)                          THEN 0
+                 WHEN rain_daily >= prev                                 THEN rain_daily - prev
+                 ELSE rain_daily
+               END AS inc
         FROM (
           SELECT date_time, rain_daily,
-                 LAG(rain_daily) OVER (ORDER BY date_time) AS prev
+                 LAG(rain_daily)      OVER (ORDER BY date_time) AS prev,
+                 LAG(DATE(date_time)) OVER (ORDER BY date_time) AS prev_d
           FROM `{$table}`
         ) a
       ) b
