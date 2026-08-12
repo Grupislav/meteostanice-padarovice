@@ -1,5 +1,13 @@
 AddDefaultCharset UTF-8
 
+
+# Skryte soubory a slozky (.git, .github, .gitignore, ...) nikdy neposilat ven.
+# Deploy je uz nenahrava (viz .github/workflows/deploy-ftp.yml), tohle je
+# pojistka, ktera plati okamzite a nezavisle na tom, co na serveru uz lezi.
+# Vyjimka /.well-known/ kvuli obnove certifikatu.
+<IfModule mod_alias.c>
+  RedirectMatch 404 "/\.(?!well-known/)"
+</IfModule>
 # Bezpe?nostní hlavi?ky
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"

@@ -28,8 +28,14 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
-          # Neposílat zbytečnosti na hosting
+          # Neposílat zbytečnosti na hosting.
+          # POZOR: `**/.git*` vyloučí jen samotnou položku, ne její obsah — bez
+          # `**/.git*/**` se celý adresář .git nahrál na web a byl veřejně
+          # stažitelný (/.git/HEAD vracelo 200). Oba vzory dohromady jsou i
+          # výchozí nastavení této akce; jakmile se `exclude` vyplní vlastní
+          # hodnotou, výchozí seznam se přepíše, takže se musí zopakovat.
           exclude: |
             **/.git*
-            **/.github/**
+            **/.git*/**
+            **/node_modules/**
             config.example.php
