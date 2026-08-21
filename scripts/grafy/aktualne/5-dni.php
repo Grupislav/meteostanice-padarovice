@@ -21,7 +21,9 @@ $sql = "
     MAX(rain_weekly)           AS rain_weekly, -- mm (kumulativ za t�den)
     AVG(pressure_QNH)          AS pressure_QNH,
     AVG(exposure)              AS exposure,
-    AVG(wind_speed)            AS wind_speed
+    AVG(wind_speed)            AS wind_speed,
+    -- naraz je spicka v bucketu, prumer by ji vyhladil
+    MAX(wind_gust)             AS wind_gust
   FROM history_cron_padarovice
   WHERE date_time >= NOW() - INTERVAL 7 DAY
   GROUP BY bucket
@@ -31,7 +33,7 @@ mysqli_close($conn);
 
 if (!$res || mysqli_num_rows($res) <= 0) { echo "Nem�me data!"; return; }
 
-$labels=[]; $y1=[]; $y2=[]; $y3=[]; $y4=[]; $y5=[]; $y6=[]; $y7=[]; $y8=[]; $yCumWeek=[];
+$labels=[]; $y1=[]; $y2=[]; $y3=[]; $y4=[]; $y5=[]; $y6=[]; $y7=[]; $y8=[]; $y9=[]; $yCumWeek=[];
 while ($r = mysqli_fetch_assoc($res)) {
   $labels[]   = $r['bucket'];
   $y1[]       = round(jednotkaTeploty((float)$r['temperature'], $u, 0), 1);
@@ -43,6 +45,7 @@ while ($r = mysqli_fetch_assoc($res)) {
   $y6[]       = round(((float)$r['pressure_QNH']) * ($ut === 'mm' ? 0.750062 : 1), 1); // hPa → ev. mmHg
   $y7[]       = round((float)$r['exposure'], 1);
   $y8[]       = round(((float)$r['wind_speed']) * ($uv === 'm' ? 1/3.6 : 1), 1); // km/h → ev. m/s
+  $y9[]       = round(((float)$r['wind_gust'])  * ($uv === 'm' ? 1/3.6 : 1), 1); // km/h → ev. m/s
 }
 $jednotkaVit = jednotkaVitrSymbol($uv);
 $jednotkaTl  = jednotkaTlakSymbol($ut);
@@ -116,7 +119,8 @@ jQuery(function($){
           '<?= $lang['srazky'] ?>'          : ' mm/h',
           '<?= $lang['tlak'] ?>'            : ' <?= $jednotkaTl ?>',
           '<?= $lang['osvit'] ?>'           : ' W',
-          '<?= $lang['vitr'] ?>'            : ' <?= $jednotkaVit ?>'
+          '<?= $lang['vitr'] ?>'            : ' <?= $jednotkaVit ?>',
+          '<?= $lang['narazy'] ?>'          : ' <?= $jednotkaVit ?>'
         }[this.series.name] || '';
         return '<b>' + this.x + '</b><br />' +
                '<span style="color:'+this.series.color+'">\u25CF</span> ' +
@@ -163,6 +167,10 @@ jQuery(function($){
       name:'<?= $lang['vitr'] ?>',
       type:'spline', color:'#3399ff', yAxis:5,
       data:[<?= implode(',', $y8) ?>], marker:{enabled:false}, visible:false
+    },{
+      name:'<?= $lang['narazy'] ?>',
+      type:'spline', color:'#1a5f99', yAxis:5,
+      data:[<?= implode(',', $y9) ?>], marker:{enabled:false}, visible:false
     }]
   });
 

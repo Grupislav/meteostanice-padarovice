@@ -20,7 +20,9 @@ $sql = "
     MAX(rain_daily)            AS rain_daily,  -- mm (kumulativ za den)
     AVG(pressure_QNH)          AS pressure_QNH,
     AVG(exposure)              AS exposure,
-    AVG(wind_speed)            AS wind_speed
+    AVG(wind_speed)            AS wind_speed,
+    -- naraz je spicka v bucketu, prumer by ji vyhladil
+    MAX(wind_gust)             AS wind_gust
   FROM history_cron_padarovice
   WHERE date_time >= NOW() - INTERVAL 1 DAY
   GROUP BY bucket
@@ -31,7 +33,7 @@ mysqli_close($conn);
 if (!$res || mysqli_num_rows($res) <= 0) { echo "Nem�me data!"; return; }
 
 $labels=[]; $yTemp=[]; $yApp=[]; $yHum=[]; $yDew=[];
-$yRate=[]; $yCum=[]; $yPres=[]; $yExp=[]; $yWind=[];
+$yRate=[]; $yCum=[]; $yPres=[]; $yExp=[]; $yWind=[]; $yGust=[];
 while ($r = mysqli_fetch_assoc($res)) {
   $labels[] = $r['bucket'];
   $yTemp[]  = round(jednotkaTeploty((float)$r['temperature'], $u, 0), 1);
@@ -44,6 +46,7 @@ while ($r = mysqli_fetch_assoc($res)) {
   $yExp[]   = round((float)$r['exposure'], 1);
   // wind_speed v DB je km/h (Ecowitt unitid=7); pro m/s prepocet /3.6
   $yWind[]  = round(((float)$r['wind_speed']) * ($uv === 'm' ? 1/3.6 : 1), 1);
+  $yGust[]  = round(((float)$r['wind_gust'])  * ($uv === 'm' ? 1/3.6 : 1), 1);
 }
 $jednotkaVit = jednotkaVitrSymbol($uv);
 $jednotkaTl  = jednotkaTlakSymbol($ut);
@@ -117,7 +120,8 @@ jQuery(function($){
           '<?= $lang['rosnybod'] ?>'       : ' <?= $jednotka ?>',
           '<?= $lang['tlak'] ?>'           : ' <?= $jednotkaTl ?>',
           '<?= $lang['osvit'] ?>'          : ' W',
-          '<?= $lang['vitr'] ?>'           : ' <?= $jednotkaVit ?>'
+          '<?= $lang['vitr'] ?>'           : ' <?= $jednotkaVit ?>',
+          '<?= $lang['narazy'] ?>'         : ' <?= $jednotkaVit ?>'
         }[this.series.name] || '';
         return '<b>' + this.x + '</b><br /><span style="color:'+this.series.color+'">\u25CF</span> ' +
                this.series.name + ': <b>' + this.y + unit + '</b>';
@@ -163,6 +167,10 @@ jQuery(function($){
       name:'<?= $lang['vitr'] ?>',
       type:'spline', color:'#3399ff', yAxis:5,
       data: <?= json_encode($yWind) ?>, marker:{enabled:false}, visible:false
+    },{
+      name:'<?= $lang['narazy'] ?>',
+      type:'spline', color:'#1a5f99', yAxis:5,
+      data: <?= json_encode($yGust) ?>, marker:{enabled:false}, visible:false
     }]
   });
 
