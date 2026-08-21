@@ -14,7 +14,11 @@ $sql = "
     AVG(temperature_apparent)  AS temperature_apparent,
     AVG(humidity)              AS humidity,
     AVG(dew_point)             AS dew_point,
-    AVG(rain_rate)             AS rain_rate,   -- mm/h (intenzita)
+    -- Spicka, ne prumer: intenzita je udalostni velicina jako naraz vetru.
+    -- Pri AVG() pres 30min kos (~15 vzorku) z kratke prutrze zbyde nic -
+    -- rekordnich 73,2 mm/h z 1. 7. 2026 by na 7dennim grafu nebylo videt.
+    -- Objem nese vedlejsi kumulativni krivka, sloupec ukazuje silu deste.
+    MAX(rain_rate)             AS rain_rate,   -- mm/h (intenzita)
     -- Zamerne MAX() nad pocitadlem: graf ukazuje prubeh kumulativu behem dne,
     -- ne uhrn za obdobi, takze se ho pretekani pres pulnoc netyka.
     MAX(rain_daily)            AS rain_daily,  -- mm (kumulativ za den)
