@@ -55,6 +55,14 @@ table tr { background: white; }
 .tooltip .tooltiptext { visibility: hidden; width: 200px; background-color: #555; color: #fff; text-align: center; border-radius: 6px; padding: 5px 0; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px; opacity: 0; transition: opacity 0.3s; }
 .tooltip .tooltiptext::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #555 transparent transparent transparent; }
 .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+/* Sirsi bublina pro vicerádkove vysvetlivky (mira osvitu Mesice).
+   Zakladni .tooltiptext je delany na jednu vetu: 200px, na stred, bez
+   vodorovneho paddingu. Tady chceme odstavec s odrazkami, takze zarovnani
+   vlevo a vetsi sirku. margin-left musi zustat polovina sirky, jinak bublina
+   prestane byt vycentrovana nad hodnotou. */
+.tooltip .tooltiptext.siroky { width: 240px; margin-left: -120px; text-align: left; padding: 8px 12px; font-size: 13px; line-height: 1.45; }
+.tooltip .tooltiptext.siroky ul { margin: 6px 0 0 0; padding-left: 18px; }
+.tooltip .tooltiptext.siroky li { margin: 2px 0; }
 .hlavicka a, .paticka a, nav a { color: white; }
 
 /* menu */

@@ -17,6 +17,10 @@ $lang['WANING_GIBBOUS']  = "Waning Gibbous";
 $lang['LAST_QUARTER']    = "Last Quarter";
 $lang['WANING_CRESCENT'] = "Waning Crescent";
 $lang['osvitmesice']     = "Moon illumination";
+$lang['osvitmesice_co']      = "How much of the Moon's near side is lit.";
+$lang['osvitmesice_dorusta'] = "no sign: waxing, from new to full";
+$lang['osvitmesice_couva']   = "minus sign: waning, from full to new";
+$lang['osvitmesice_meze']    = "0% is new moon, 100% is full moon";
 
 // legacy moon-phase keys used elsewhere (keep mapped)
 $lang['nov']            = "New Moon";

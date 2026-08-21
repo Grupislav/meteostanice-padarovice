@@ -40,6 +40,21 @@ $startDt = date_create('2024-11-13');
 $nowDt   = date_create();
 $dobaMereniDni = ($startDt && $nowDt) ? (int)$startDt->diff($nowDt)->days : null;
 
+// Míra osvitu Měsíce – u hodnoty visí nápověda, protože znaménko nese informaci:
+// kladná hodnota = dorůstá, záporná = couvá. Bez vysvětlení vypadá mínus jako chyba.
+$osvitRaw = $val('moon_illumination_percentage');
+if (is_numeric($osvitRaw)) {
+  $osvitMesice = "<div class='tooltip'>" . (float)$osvitRaw . " %"
+    . "<span class='tooltiptext siroky'>" . e($lang['osvitmesice_co'])
+    . "<ul>"
+    . "<li>" . e($lang['osvitmesice_dorusta']) . "</li>"
+    . "<li>" . e($lang['osvitmesice_couva']) . "</li>"
+    . "<li>" . e($lang['osvitmesice_meze']) . "</li>"
+    . "</ul></span></div>";
+} else {
+  $osvitMesice = '—';
+}
+
 // výstup
 echo "<table class='tabulkaVHlavicce'>
   <tr class='radek zelenyRadek'>
@@ -87,7 +102,7 @@ echo "<table class='tabulkaVHlavicce'>
   </tr>
   <tr>
     <td align='right'>{$lang['osvitmesice']}:</td>
-    <td>" . (is_numeric($val('moon_illumination_percentage')) ? (float)$val('moon_illumination_percentage') . ' %' : '—') . "</td>
+    <td>{$osvitMesice}</td>
   </tr>
   <tr>
     <td align='right'>{$lang['fazemesice']}:</td>

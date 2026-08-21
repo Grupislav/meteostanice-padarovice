@@ -15,6 +15,10 @@ $lang['WANING_GIBBOUS'] = "Ubývá do třetí čtvrtě";
 $lang['LAST_QUARTER'] = "Poslední čtvrť";
 $lang['WANING_CRESCENT'] = "Ubývající srpek";
 $lang['osvitmesice'] = "Míra osvitu Měsíce";
+$lang['osvitmesice_co'] = "Kolik procent přivrácené strany Měsíce je osvětleno.";
+$lang['osvitmesice_dorusta'] = "bez znaménka: dorůstá, od novu k úplňku";
+$lang['osvitmesice_couva'] = "s mínusem: couvá, od úplňku k novu";
+$lang['osvitmesice_meze'] = "0 % je nov, 100 % úplněk";
 
 // tmep v1-2
 $lang['info'] = "Informace o meteostanici";
