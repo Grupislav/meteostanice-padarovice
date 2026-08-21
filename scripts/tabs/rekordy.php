@@ -166,10 +166,21 @@ $nadpis = function (string $text) {
         </table>";
 };
 
-/** Jedna dlaždice absolutního rekordu (popis / hodnota / datum). */
-$dlazdice = function (string $barva, string $popis, string $hodnota, string $datum) {
+/**
+ * Jedna dlaždice absolutního rekordu (popis / hodnota / datum).
+ * $napoveda = ['uvod' => string, 'body' => string[]] pověsí na popisek bublinu
+ * u veličin, jejichž definice není z čísla patrná.
+ */
+$dlazdice = function (string $barva, string $popis, string $hodnota, string $datum, ?array $napoveda = null) {
+  $label = rtrim($popis, ':');
+  if ($napoveda) {
+    $odrazky = '';
+    foreach ($napoveda['body'] as $radek) { $odrazky .= "<li>" . e($radek) . "</li>"; }
+    $label = "<div class='tooltip'>{$label}<span class='tooltiptext siroky'>"
+           . e($napoveda['uvod']) . "<ul>{$odrazky}</ul></span></div>";
+  }
   echo "<div class='dlazdice{$barva}'>
-          <div class='dl-popis'>" . rtrim($popis, ':') . "</div>
+          <div class='dl-popis'>{$label}</div>
           <div class='dl-hodnota'>{$hodnota}</div>
           <div class='dl-datum'>{$datum}</div>
         </div>";
@@ -264,6 +275,16 @@ $absRekordy = [
   [$rokRows, 'mm',     'DESC', $lang['nejvyssiruhrn'],       $fmtMm, 'barvaRameckuSrazkyRok',   'rok'],
 ];
 
+/* Bubliny jen u veličin, které se nedají odvodit z čísla. Klíčem je sloupec —
+   rr_max i re_max jsou v $absRekordy právě jednou, takže je to jednoznačné.
+   Zdroj obou definic je manuál GoGEN ME 3900, str. CZ-13. */
+$napovedy = [
+  'rr_max' => ['uvod' => $lang['intenzita_co'],
+               'body' => [$lang['intenzita_prumer'], $lang['intenzita_spicka']]],
+  're_max' => ['uvod' => $lang['epizoda_co'],
+               'body' => [$lang['epizoda_zacatek'], $lang['epizoda_konec'], $lang['epizoda_presah']]],
+];
+
 foreach ($absRekordy as [$rada, $key, $order, $popis, $fmt, $barva, $format]) {
   $r = extrem($rada, $key, $order);
   if (!$r) { echo "<div class='dlazdice'><div class='dl-popis'>" . rtrim($popis, ':') . "</div><div class='dl-hodnota'>&mdash;</div><div class='dl-datum'>&nbsp;</div></div>"; continue; }
@@ -278,7 +299,7 @@ foreach ($absRekordy as [$rada, $key, $order, $popis, $fmt, $barva, $format]) {
     default:      $datum = formatDnu($r['d']);
   }
 
-  $dlazdice($barva($v), $popis, $fmt($v), $datum);
+  $dlazdice($barva($v), $popis, $fmt($v), $datum, $napovedy[$key] ?? null);
 }
 
 echo "</div>";

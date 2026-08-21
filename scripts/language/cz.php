@@ -188,6 +188,14 @@ $lang['nejvyssidennimin'] = "Nejvyšší denní minimum:";
 $lang['nejnizsidennimax'] = "Nejnižší denní maximum:";
 $lang['maxuvi'] = "Maximální UV index:";
 $lang['maxintenzitasrazek'] = "Nejvyšší intenzita srážek:";
+// vysvětlivky k dlaždicím (zdroj: manuál GoGEN ME 3900, str. CZ-13)
+$lang['intenzita_co'] = "Míru srážek počítá stanice jako srážky za posledních 10 minut × 6.";
+$lang['intenzita_prumer'] = "je to tedy desetiminutový průměr přepočtený na mm/h";
+$lang['intenzita_spicka'] = "ne okamžitá špička – velmi krátká průtrž se v něm zprůměruje";
+$lang['epizoda_co'] = "Souvislá srážková epizoda podle stanice.";
+$lang['epizoda_zacatek'] = "začíná prvními srážkami po suchu";
+$lang['epizoda_konec'] = "končí, až za 24 h spadne méně než 1 mm a poslední hodinu nic";
+$lang['epizoda_presah'] = "může přesahovat půlnoc i několik dní";
 $lang['nejvyssiuhrnepizody'] = "Nejvyšší úhrn epizody:";
 $lang['nejvyssityuhrn'] = "Nejvyšší týdenní úhrn:";
 $lang['nejvyssimuhrn'] = "Nejvyšší měsíční úhrn:";

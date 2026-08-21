@@ -118,6 +118,11 @@ nav ul > li > a { cursor: default; }
 .dlazdice .dl-popis { font-size: 12px; line-height: 15px; }
 .dlazdice .dl-hodnota { font-size: 21px; line-height: 26px; }
 .dlazdice .dl-datum { font-size: 12px; line-height: 15px; opacity: .85; }
+/* Napoveda uvnitr dlazdice: teckovany ramecek musi prevzit barvu textu,
+   cerna z .tooltip je na tmavem podkladu neviditelna. Vyssi z-index kvuli
+   sousednim dlazdicim, ktere jsou v DOM az za nou. */
+.dlazdice .tooltip { border-bottom-color: currentColor; }
+.dlazdice .tooltip .tooltiptext { z-index: 5; }
 .rekordy-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; gap: 10px; margin: 10px 0 20px; }
 .rekordy-grid--tretiny { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .rekordy-grid table { width: 100%; table-layout: fixed; }

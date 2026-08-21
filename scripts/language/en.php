@@ -194,6 +194,14 @@ $lang['nejvyssidennimin']    = "Highest daily minimum:";
 $lang['nejnizsidennimax']    = "Lowest daily maximum:";
 $lang['maxuvi']              = "Maximum UV index:";
 $lang['maxintenzitasrazek']  = "Highest rain rate:";
+// tile explanations (source: GoGEN ME 3900 manual, p. CZ-13)
+$lang['intenzita_co']     = "The station computes rain rate as rainfall over the last 10 minutes × 6.";
+$lang['intenzita_prumer'] = "so it is a ten-minute average expressed in mm/h";
+$lang['intenzita_spicka'] = "not an instantaneous peak – a very short burst gets averaged out";
+$lang['epizoda_co']       = "A continuous rain episode as tracked by the station.";
+$lang['epizoda_zacatek']  = "starts with the first rainfall after a dry spell";
+$lang['epizoda_konec']    = "ends once 24 h bring less than 1 mm and the last hour none";
+$lang['epizoda_presah']   = "may span midnight and several days";
 $lang['nejvyssiuhrnepizody'] = "Highest event rainfall:";
 $lang['nejvyssityuhrn']      = "Highest weekly rainfall:";
 $lang['nejvyssimuhrn']       = "Highest monthly rainfall:";
