@@ -49,31 +49,53 @@ $I  = fn($x) => is_numeric((string)$x) ? (int)$x : null;
 $clamp = fn($v, $min, $max) => ($v === null) ? null : max($min, min($max, $v));
 
 // --- vyt?hnout hodnoty ---
-$epoch            = $I($data->time) ?? time();
+// --- bezpecne cteni z odpovedi ---------------------------------------
+// Ecowitt obcas pole prejmenuje: v zari 2026 se z rainfall.hourly stalo
+// rainfall.1_hour. Primy pristup pres -> pak sypal PHP warningy rovnou do
+// odpovedi (vcetne absolutni cesty na serveru) a hodnota tise spadla na 0,
+// takze se to poznalo az po mesicich. Helper vrati null a cestu si poznamena,
+// aby se pristi prejmenovani ohlasilo do logu misto do dat.
+$chybi = [];
+$get = function (...$path) use ($data, &$chybi) {
+    $node = $data;
+    foreach ($path as $k) {
+        if (!is_object($node) || !isset($node->$k)) { $chybi[] = implode('.', $path); return null; }
+        $node = $node->$k;
+    }
+    return $node;
+};
+
+$epoch            = $I($get('time')) ?? time();
 $minuteAligned    = (int)($epoch - ($epoch % 60));                   // zarovnat na minutu
 $dtLocal          = date('Y-m-d H:i:00', $minuteAligned);            // lok?ln? ?as (Europe/Prague)
 
-$temperature      = $F($data->data->outdoor->temperature->value);
-$humidity         = $clamp($F($data->data->outdoor->humidity->value), 0, 100);
-$dew_point        = $F($data->data->outdoor->dew_point->value);
-$temperature_app  = $F($data->data->outdoor->feels_like->value);
+$temperature      = $F($get('data','outdoor','temperature','value'));
+$humidity         = $clamp($F($get('data','outdoor','humidity','value')), 0, 100);
+$dew_point        = $F($get('data','outdoor','dew_point','value'));
+$temperature_app  = $F($get('data','outdoor','feels_like','value'));
 
-$pressure_qnh     = $F($data->data->pressure->relative->value);
-$exposure         = max(0.0, (float)$F($data->data->solar_and_uvi->solar->value)); // W/m?, bez z?porn?ch
-$uvi              = $clamp($F($data->data->solar_and_uvi->uvi->value), 0, 50);
+$pressure_qnh     = $F($get('data','pressure','relative','value'));
+$exposure         = max(0.0, (float)$F($get('data','solar_and_uvi','solar','value'))); // W/m?, bez z?porn?ch
+$uvi              = $clamp($F($get('data','solar_and_uvi','uvi','value')), 0, 50);
 
-$wind_speed       = max(0.0, (float)$F($data->data->wind->wind_speed->value));
-$wind_gust        = max(0.0, (float)$F($data->data->wind->wind_gust->value));
-$wind_dir         = $F($data->data->wind->wind_direction->value);
+$wind_speed       = max(0.0, (float)$F($get('data','wind','wind_speed','value')));
+$wind_gust        = max(0.0, (float)$F($get('data','wind','wind_gust','value')));
+$wind_dir         = $F($get('data','wind','wind_direction','value'));
 $wind_dir         = $wind_dir !== null ? fmod($wind_dir + 360.0, 360.0) : null;    // 0–360
 
-$rain_daily       = max(0.0, (float)$F($data->data->rainfall->daily->value));
-$rain_event       = max(0.0, (float)$F($data->data->rainfall->event->value));
-$rain_rate        = max(0.0, (float)$F($data->data->rainfall->rain_rate->value));
-$rain_hourly      = max(0.0, (float)$F($data->data->rainfall->hourly->value));
-$rain_weekly      = max(0.0, (float)$F($data->data->rainfall->weekly->value));
-$rain_monthly     = max(0.0, (float)$F($data->data->rainfall->monthly->value));
-$rain_yearly      = max(0.0, (float)$F($data->data->rainfall->yearly->value));
+$rain_daily       = max(0.0, (float)$F($get('data','rainfall','daily','value')));
+$rain_event       = max(0.0, (float)$F($get('data','rainfall','event','value')));
+$rain_rate        = max(0.0, (float)$F($get('data','rainfall','rain_rate','value')));
+$rain_hourly      = max(0.0, (float)$F($get('data','rainfall','1_hour','value'))); // driv "hourly"
+$rain_weekly      = max(0.0, (float)$F($get('data','rainfall','weekly','value')));
+$rain_monthly     = max(0.0, (float)$F($get('data','rainfall','monthly','value')));
+$rain_yearly      = max(0.0, (float)$F($get('data','rainfall','yearly','value')));
+
+// Hlasime vzdy, i pri vypnutem $DEBUG - tise chybejici pole je presne ten
+// pripad, ktery se jinak neprojevi nicim jinym nez nulami v databazi.
+if ($chybi) {
+    error_log('[dbinsert] chybejici pole v odpovedi Ecowittu: ' . implode(', ', array_unique($chybi)));
+}
 
 // minim?ln? validace – kdy? chyb? tlak i teplota, rad?ji neukl?dat
 if ($pressure_qnh === null && $temperature === null) {
