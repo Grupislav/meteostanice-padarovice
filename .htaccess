@@ -27,5 +27,19 @@ AddDefaultCharset UTF-8
   ExpiresByType image/gif "access plus 30 days"
   ExpiresByType image/png "access plus 30 days"
   ExpiresByType image/jpeg "access plus 30 days"
-  ExpiresDefault "access plus 1 hour"
+  # Dynamicky vystup (PHP jde ven jako text/html) se necachuje. Drive tu byl
+  # ExpiresDefault "access plus 1 hour", ktery se vztahoval i na nej - stranka
+  # pak ukazovala az hodinu stara data a odznak "online" tvrdil, ze sber bezi,
+  # i kdyz uz 22 hodin stal.
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+# CDN pred hostingem se ridi hlavne hlavickou Cache-Control, proto ji u PHP
+# nastavujeme jeste explicitne. Tyka se to i /scripts/dbinsert.php, ktery musi
+# skutecne probehnout pri kazdem volani, ne vratit zacachovanou odpoved.
+<IfModule mod_headers.c>
+  <FilesMatch "\.php$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+  </FilesMatch>
 </IfModule>
